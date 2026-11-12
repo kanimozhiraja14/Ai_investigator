@@ -4,10 +4,13 @@ time-window correlation, and evidence tracking.
 """
 
 import time
+from threading import Lock
 from typing import Dict, Any, List, Optional
 from .models import InvestigationResult, InvestigationStep, EvidenceItem, Incident, RiskAnalysis, ConfidenceBreakdown
 from .telemetry import get_incident
 from .tools import tools, ReadOnlyViolationError
+
+_INVESTIGATION_LOCK = Lock()
 
 
 class AIIncidentInvestigator:
@@ -15,6 +18,10 @@ class AIIncidentInvestigator:
         self.tool_registry = tools
 
     def investigate(self, incident_id: str) -> InvestigationResult:
+        with _INVESTIGATION_LOCK:
+            return self._investigate(incident_id)
+
+    def _investigate(self, incident_id: str) -> InvestigationResult:
         start_time = time.perf_counter()
         incident = get_incident(incident_id)
         if not incident:
@@ -61,14 +68,14 @@ class AIIncidentInvestigator:
             tool_name="correlate_signals",
             tool_args={"incident_id": incident_id},
             tool_result_preview=corr_data.get("causality_finding", "Correlation executed"),
-            evidence_gathered=[],
+            evidence_gathered=corr_res.get("evidence_registered", []),
             timestamp=incident.start_time
         )
         trace.append(step_2)
         step_counter += 1
 
         # -------------------------------------------------------------
-        # Step 3: Deployment History Verification
+        # Step 3: Deployment History Query
         # -------------------------------------------------------------
         thought_3 = f"Checking recent deployment events for {incident.service} to verify if a rollout coincided with the outage."
         dep_res = self.tool_registry.get_deployments_tool(incident_id, service=incident.service)
@@ -128,7 +135,7 @@ class AIIncidentInvestigator:
         step_counter += 1
 
         # -------------------------------------------------------------
-        # Step 6: Root Cause Synthesis & Evidence Linking
+        # Step 6: Root Cause Selection
         # -------------------------------------------------------------
         root_cause, category, confidence, unsupported = self._synthesize_diagnosis(
             incident=incident,
@@ -163,21 +170,24 @@ class AIIncidentInvestigator:
             "Engage service on-call engineer"
         ]
 
-        # Compute calibrated confidence breakdown
+        # Compute heuristic confidence breakdown
         log_w = 0.98 if error_logs else 0.40
         metric_w = 0.96 if metrics else 0.50
-        temporal_w = 0.95 if corr_data.get("causality_finding") else 0.60
+        temporal_w = 0.95 if (
+            corr_data.get("correlated_deployments_count")
+            or corr_data.get("metric_anomalies_count")
+        ) else 0.60
         runbook_w = 0.97 if top_runbook_detail else 0.50
-        calibrated_score = round(0.35 * log_w + 0.25 * metric_w + 0.20 * temporal_w + 0.20 * runbook_w, 3)
+        heuristic_score = round(0.35 * log_w + 0.25 * metric_w + 0.20 * temporal_w + 0.20 * runbook_w, 3)
 
         conf_breakdown = ConfidenceBreakdown(
-            overall_score=calibrated_score,
+            overall_score=heuristic_score,
             log_signal_weight=log_w,
             metric_anomaly_weight=metric_w,
             temporal_proximity_weight=temporal_w,
             runbook_alignment_weight=runbook_w,
             explanation=(
-                f"Calibrated across 4 independent telemetry vectors: "
+                f"Heuristic score across 4 signal categories (not statistically calibrated): "
                 f"Log signature clarity ({int(log_w*100)}%), Metric anomaly match ({int(metric_w*100)}%), "
                 f"Temporal causality ({int(temporal_w*100)}%), and Runbook symptom alignment ({int(runbook_w*100)}%)."
             )
@@ -193,7 +203,7 @@ class AIIncidentInvestigator:
             mode="READ_ONLY",
             root_cause_diagnosis=root_cause,
             category=category,
-            confidence_score=calibrated_score,
+            confidence_score=heuristic_score,
             confidence_breakdown=conf_breakdown,
             evidence_chain=list(self.tool_registry.evidence_store.values()),
             unsupported_claims=unsupported,
@@ -214,8 +224,7 @@ class AIIncidentInvestigator:
         runbook: Optional[Dict[str, Any]]
     ) -> tuple[str, str, float, List[str]]:
         """
-        Synthesize conclusion by correlating logs, metrics, deployments, and runbook.
-        Every single claim is verified against captured evidence.
+        Select a deterministic diagnosis pattern from the bundled incident signals.
         """
         unsupported = []
 

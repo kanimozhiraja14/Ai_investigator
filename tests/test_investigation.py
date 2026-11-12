@@ -33,7 +33,7 @@ class TestInvestigationEngine(unittest.TestCase):
         # Ensure every evidence item has a valid EVID ID
         for ev in res.evidence_chain:
             self.assertTrue(ev.id.startswith("EVID-"))
-            self.assertIn(ev.source_type, ["RUNBOOK", "DEPLOYMENT", "LOG", "METRIC", "RISK"])
+            self.assertIn(ev.source_type, ["RUNBOOK", "DEPLOYMENT", "LOG", "METRIC", "CORRELATION", "RISK"])
             self.assertTrue(len(ev.summary) > 5)
 
     def test_unsupported_claims_rate_is_zero(self):

@@ -1,5 +1,7 @@
 # AI Incident Investigator - Deployment & Operations Guide
 
+> **Audit status:** This legacy guide contains unverified production-readiness and health-route claims. Docker was not available for validation; this demo has no authentication and is not approved for public deployment. See [`DEPLOYMENT_READINESS.md`](./DEPLOYMENT_READINESS.md) before deploying.
+
 ## 1. Overview
 The **AI Incident Investigator** is an asynchronous Python ASGI application running on FastAPI and Uvicorn. It is designed for low-overhead deployment in enterprise container clusters (Kubernetes / OpenShift), Docker environments, or standard Linux/Windows virtual machines.
 

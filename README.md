@@ -15,6 +15,8 @@
 
 ---
 
+> **Audit:** This repository's verified pipeline, test results, and deployment limitations are documented in [`docs/FINAL_QA_REPORT.md`](docs/FINAL_QA_REPORT.md) and [`docs/DEPLOYMENT_READINESS.md`](docs/DEPLOYMENT_READINESS.md).
+
 ## What it is
 
 AI Incident Investigator is a Python web application for exploring a set of **10 bundled, synthetic service incidents**. It provides a dashboard and REST API to inspect incident records, query their sample logs, metrics, and deployment events, search Markdown runbooks, and generate a deterministic investigation report.
@@ -81,11 +83,11 @@ Activate the virtual environment:
 source .venv/bin/activate
 ```
 
-Install dependencies and start the application:
+Install dependencies and start the application. By default, the app is in local development mode and should remain bound to loopback:
 
 ```console
 python -m pip install -r requirements.txt
-python -m uvicorn incident_investigator.app.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn incident_investigator.app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
 Open:
@@ -93,19 +95,34 @@ Open:
 - **Dashboard:** [http://localhost:8000](http://localhost:8000)
 - **Interactive API docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **Health endpoint:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
+- **Unauthenticated liveness:** [http://localhost:8000/api/healthz](http://localhost:8000/api/healthz)
+- **Authenticated component health:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 To stop the server, press `Ctrl+C`.
 
+### Enable API authentication
+
+When `AI_INVESTIGATOR_API_TOKEN` is configured, every `/api/*` endpoint except the generic `/api/healthz` and `/api/readyz` probes requires `Authorization: Bearer <token>`. The dashboard prompts for the token when needed and holds it in memory only; re-enter it after reloading the page. Production startup requires a token of at least 32 ASCII characters.
+
+For local testing in PowerShell, generate a temporary token without printing it and start the app in the same shell:
+
+```powershell
+$env:AI_INVESTIGATOR_API_TOKEN = python -c "import secrets; print(secrets.token_urlsafe(48))"
+python -m uvicorn incident_investigator.app.main:app --host 127.0.0.1 --port 8000 --no-access-log
+```
+
+The local Python app does not load `.env` files automatically. `.env.example` lists supported variables; set them in the shell or your process manager. Do not send bearer tokens over untrusted HTTP connections.
+
 ### Run with Docker Compose
 
-With Docker and the Compose plugin installed:
+With Docker Desktop and the Compose plugin installed, set a secret in the current PowerShell session and start the production-configured, loopback-bound container:
 
-```console
+```powershell
+$env:AI_INVESTIGATOR_API_TOKEN = python -c "import secrets; print(secrets.token_urlsafe(48))"
 docker compose up --build
 ```
 
-Then open [http://localhost:8000](http://localhost:8000). Stop the service with `Ctrl+C`; run `docker compose down` to remove its container.
+Open [http://localhost:8000](http://localhost:8000); the dashboard asks for the token. Stop with `Ctrl+C`, then run `docker compose down`. The container is configured with a read-only root filesystem and no persistent application-data volume. **Docker has not been validated in this environment; see [deployment readiness](docs/DEPLOYMENT_READINESS.md) for the required verification steps.**
 
 ## API at a glance
 
@@ -114,6 +131,8 @@ All application endpoints are defined in [`incident_investigator/app/main.py`](i
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/api/health` | Application health and component status |
+| `GET` | `/api/healthz`, `/api/readyz` | Generic liveness/readiness probes; no incident details |
+| `GET` | `/api/ops/metrics` | Authenticated aggregate operational counters and durations |
 | `GET` | `/api/stats` | Summary counts for the sample incidents |
 | `GET` | `/api/incidents` | List incidents; supports `severity`, `status`, `service`, and `search` filters |
 | `GET` | `/api/incidents/{incident_id}` | Retrieve a single incident |
@@ -126,13 +145,14 @@ All application endpoints are defined in [`incident_investigator/app/main.py`](i
 | `GET` | `/api/deployments?incident_id=INC-001` | Query sample deployment events |
 | `GET` | `/api/runbooks?query=connection%20pool` | Search the runbook corpus |
 | `GET` | `/api/runbooks/{runbook_id}` | Retrieve a runbook |
-| `GET` | `/api/benchmark` | Run the comparative benchmark |
-| `GET` | `/api/benchmark/export` | Generate and download the benchmark JSON |
+| `GET` | `/api/benchmark` | Run the comparative benchmark in memory |
+| `GET` | `/api/benchmark/export` | Generate and download benchmark JSON in memory |
 
 Example:
 
-```bash
-curl -X POST "http://localhost:8000/api/investigate/INC-001?mode=ai"
+```powershell
+$headers = @{ Authorization = "Bearer $env:AI_INVESTIGATOR_API_TOKEN" }
+Invoke-RestMethod -Headers $headers -Method Post "http://localhost:8000/api/investigate/INC-001?mode=ai"
 ```
 
 ## Benchmark
@@ -145,7 +165,7 @@ Treat these as demo results, not a production accuracy or performance claim:
 - The investigator uses deterministic, scenario-specific rules; it is not an independently trained or evaluated AI model.
 - The correctness metric is a project-defined heuristic, not a human-reviewed assessment.
 - Runtime values depend on the machine and measurement conditions; the stored snapshot is not a latency service-level objective.
-- Calling `/api/benchmark` runs the benchmark and updates the JSON report.
+- Calling `/api/benchmark` computes the report in memory and does not update the checked-in JSON snapshot.
 
 ## Safety and limitations
 
@@ -153,7 +173,7 @@ Treat these as demo results, not a production accuracy or performance claim:
 - **Synthetic, in-memory data:** The included incident telemetry is loaded by the application; there are no live integrations, persistent telemetry storage, or multi-user state management.
 - **Rule-based diagnosis:** Findings are generated by explicit matching rules in the investigator code. Results should not be interpreted as general-purpose AI reasoning or as validated conclusions for real incidents.
 - **Recommendations require review:** Runbook actions and risk metadata are suggestions for this demo. Verify any operational change independently and follow your organization's incident process.
-- **Not production-hardened:** The app enables permissive CORS and has no authentication or authorization layer. Do not expose it to untrusted networks or use it to process sensitive production telemetry without adding appropriate controls.
+- **Baseline hardening is not production certification:** A shared bearer token, configurable exact-origin CORS, per-process rate limiting, redacted request logs, and aggregate operational metrics are implemented. There is no user identity/RBAC, HTTPS termination, distributed rate limiting, external alerting, real-data redaction, durable evidence storage, or verified Docker runtime. Keep the service on loopback and use only synthetic data; see [security review](docs/SECURITY_REVIEW.md) and [deployment readiness](docs/DEPLOYMENT_READINESS.md).
 
 ## Development and tests
 

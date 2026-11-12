@@ -1,5 +1,7 @@
 # AI Incident Investigator - REST API Reference Specification
 
+> **Audit status:** This legacy reference lists routes and response values that do not match the application. Do not rely on it as the current contract. Use the runtime [`/docs`](http://localhost:8000/docs) page or [`FINAL_QA_REPORT.md`](./FINAL_QA_REPORT.md).
+
 ## Base URL
 ```
 http://localhost:8000

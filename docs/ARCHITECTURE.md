@@ -1,5 +1,7 @@
 # AI Incident Investigator - System Architecture & Engineering Specification
 
+> **Audit status:** This legacy architecture description includes capabilities not implemented by the current application (including an agentic reasoning cycle, immutable evidence, and production telemetry). Use [`PIPELINE_AUDIT.md`](./PIPELINE_AUDIT.md) as the verified architecture description.
+
 ## 1. Executive Summary & Architectural Overview
 
 The **AI Incident Investigator** is an enterprise-grade autonomous Site Reliability Engineering (SRE) and Security Operations Center (SOC) investigation platform. It automates root-cause analysis (RCA), telemetry correlation, runbook retrieval, risk categorization (CWE / CIA triad), and mitigation synthesis for complex distributed cloud outages and security incidents.

@@ -7,6 +7,64 @@ let currentIncidentId = "INC-001";
 let allIncidents = [];
 let currentInvestigationData = null;
 let allEvidenceItems = [];
+let apiToken = "";
+let apiTokenPrompt = null;
+let apiTokenPromptResolve = null;
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function requestApiToken(message) {
+  if (apiTokenPrompt) {
+    document.getElementById("apiAccessMessage").textContent = message;
+    return apiTokenPrompt;
+  }
+
+  document.getElementById("apiAccessMessage").textContent = message;
+  document.getElementById("apiTokenInput").value = "";
+  document.getElementById("apiAccessModal").classList.add("show");
+  apiTokenPrompt = new Promise((resolve) => {
+    apiTokenPromptResolve = resolve;
+  });
+  document.getElementById("apiTokenInput").focus();
+  return apiTokenPrompt;
+}
+
+function resolveApiTokenPrompt(token) {
+  const resolve = apiTokenPromptResolve;
+  apiTokenPromptResolve = null;
+  apiTokenPrompt = null;
+  document.getElementById("apiAccessModal").classList.remove("show");
+  if (resolve) resolve(token);
+}
+
+async function apiFetch(url, options = {}) {
+  const send = () => {
+    const headers = new Headers(options.headers || {});
+    if (apiToken) headers.set("Authorization", `Bearer ${apiToken}`);
+    return fetch(url, { ...options, headers });
+  };
+
+  let response = await send();
+  for (let attempt = 0; response.status === 401 && attempt < 2; attempt++) {
+    apiToken = "";
+    const enteredToken = await requestApiToken(
+      attempt === 0 ? "Authentication required." : "Token rejected. Try again."
+    );
+    if (!enteredToken) return response;
+    apiToken = enteredToken;
+    response = await send();
+  }
+  if (response.status === 401) apiToken = "";
+  return response;
+}
 
 const CATEGORY_COLORS = {
   "BAD_DEPLOYMENT": "#ef4444",
@@ -23,6 +81,7 @@ const CATEGORY_COLORS = {
 
 document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
+  setupApiAccess();
   setupFilterListeners();
   setupInspectorTabs();
   setupEvidenceModal();
@@ -58,6 +117,40 @@ function setupNavigation() {
   quickSelect.addEventListener("change", (e) => {
     selectIncident(e.target.value);
     runInvestigation("ai");
+  });
+}
+
+function setupApiAccess() {
+  const form = document.getElementById("apiAccessForm");
+  const tokenInput = document.getElementById("apiTokenInput");
+
+  document.getElementById("apiAccessBtn").addEventListener("click", async () => {
+    if (apiTokenPrompt) return;
+    const token = await requestApiToken("Enter the bearer token configured by the service operator.");
+    if (token) {
+      apiToken = token;
+      await loadInitialData();
+      await runInvestigation("ai");
+    }
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const token = tokenInput.value.trim();
+    if (!token) {
+      document.getElementById("apiAccessMessage").textContent = "Enter a token to connect.";
+      tokenInput.focus();
+      return;
+    }
+    tokenInput.value = "";
+    resolveApiTokenPrompt(token);
+  });
+
+  const cancel = () => resolveApiTokenPrompt("");
+  document.getElementById("apiAccessCloseBtn").addEventListener("click", cancel);
+  document.getElementById("apiAccessDisconnectBtn").addEventListener("click", () => {
+    apiToken = "";
+    cancel();
   });
 }
 
@@ -143,12 +236,14 @@ async function loadInitialData() {
 // ------------------------------------------------------------------
 async function loadStats() {
   try {
-    const res = await fetch("/api/stats");
+    const res = await apiFetch("/api/stats");
     const stats = await res.json();
 
     document.getElementById("kpiTotalIncidents").textContent = stats.total_incidents;
     document.getElementById("kpiP1Incidents").textContent = stats.severity_counts["P1"] || 0;
     document.getElementById("kpiP2Incidents").textContent = stats.severity_counts["P2"] || 0;
+    document.getElementById("kpiOpenIncidents").textContent = stats.status_counts["OPEN"] || 0;
+    document.getElementById("kpiIncidentCategories").textContent = Object.keys(stats.category_counts).length;
     document.getElementById("navIncCount").textContent = stats.total_incidents;
 
     // Render Segmented Category Bar
@@ -176,7 +271,7 @@ async function loadStats() {
       chip.innerHTML = `
         <div class="cat-chip-left">
           <span class="cat-color-dot" style="background-color:${color};"></span>
-          <span class="cat-name">${cat}</span>
+          <span class="cat-name">${escapeHtml(cat)}</span>
         </div>
         <span class="cat-count">${count} (${Math.round(pct)}%)</span>
       `;
@@ -189,17 +284,18 @@ async function loadStats() {
     stats.recent_incidents.forEach((inc) => {
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td><strong style="color:var(--primary); font-family:var(--font-mono);">${inc.id}</strong></td>
-        <td><span class="badge ${inc.severity === 'P1' ? 'badge-p1' : 'badge-p2'}">${inc.severity}</span></td>
-        <td><code>${inc.service}</code></td>
+        <td><strong style="color:var(--primary); font-family:var(--font-mono);">${escapeHtml(inc.id)}</strong></td>
+        <td><span class="badge ${inc.severity === 'P1' ? 'badge-p1' : 'badge-p2'}">${escapeHtml(inc.severity)}</span></td>
+        <td><code>${escapeHtml(inc.service)}</code></td>
         <td style="max-width:280px;">
-          <div style="font-weight:600; color:var(--text-main); font-size:12px;">${inc.title}</div>
-          <div style="font-size:10.5px; color:var(--text-dim); font-family:var(--font-mono);">${inc.initial_alert.substring(0, 75)}...</div>
+          <div style="font-weight:600; color:var(--text-main); font-size:12px;">${escapeHtml(inc.title)}</div>
+          <div style="font-size:10.5px; color:var(--text-dim); font-family:var(--font-mono);">${escapeHtml(inc.initial_alert.substring(0, 75))}...</div>
         </td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="handleInvestigateClick('${inc.id}')">Inspect</button>
+          <button class="btn btn-outline btn-sm" data-incident-id="${escapeHtml(inc.id)}">Inspect</button>
         </td>
       `;
+      row.querySelector("[data-incident-id]").addEventListener("click", () => handleInvestigateClick(inc.id));
       recentList.appendChild(row);
     });
 
@@ -214,7 +310,7 @@ async function loadStats() {
 // ------------------------------------------------------------------
 async function loadIncidents() {
   try {
-    const res = await fetch("/api/incidents");
+    const res = await apiFetch("/api/incidents");
     allIncidents = await res.json();
     populateQuickSelect(allIncidents);
     renderIncidentsTable(allIncidents);
@@ -243,26 +339,38 @@ function renderIncidentsTable(incidents) {
   tbody.innerHTML = "";
   document.getElementById("rosterCountBadge").textContent = `${incidents.length} Total Incidents`;
 
+  if (incidents.length === 0) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 8;
+    cell.className = "empty-state";
+    cell.textContent = "No incident scenarios match the selected filters.";
+    row.appendChild(cell);
+    tbody.appendChild(row);
+    return;
+  }
+
   incidents.forEach((inc) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td><strong style="color:var(--primary); font-family:var(--font-mono); font-size:12.5px;">${inc.id}</strong></td>
-      <td><span class="badge ${inc.severity === 'P1' ? 'badge-p1' : 'badge-p2'}">${inc.severity}</span></td>
-      <td><code>${inc.service}</code></td>
-      <td style="color:var(--text-dim); font-family:var(--font-mono); font-size:11px;">${inc.start_time}</td>
+      <td><strong style="color:var(--primary); font-family:var(--font-mono); font-size:12.5px;">${escapeHtml(inc.id)}</strong></td>
+      <td><span class="badge ${inc.severity === 'P1' ? 'badge-p1' : 'badge-p2'}">${escapeHtml(inc.severity)}</span></td>
+      <td><code>${escapeHtml(inc.service)}</code></td>
+      <td style="color:var(--text-dim); font-family:var(--font-mono); font-size:11px;">${escapeHtml(inc.start_time)}</td>
       <td>
-        <div style="font-weight:600; color:var(--text-main); margin-bottom:2px;">${inc.title}</div>
-        <div style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">${inc.initial_alert}</div>
+        <div style="font-weight:600; color:var(--text-main); margin-bottom:2px;">${escapeHtml(inc.title)}</div>
+        <div style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">${escapeHtml(inc.initial_alert)}</div>
       </td>
       <td>
-        <div style="font-size:11px; color:var(--text-muted);">${inc.threat_category || 'SYSTEM_FAULT'}</div>
-        <div style="font-size:10px; color:#fca5a5; font-family:var(--font-mono);">${inc.cwe_id || 'N/A'}</div>
+        <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(inc.threat_category || 'SYSTEM_FAULT')}</div>
+        <div style="font-size:10px; color:#fca5a5; font-family:var(--font-mono);">${escapeHtml(inc.cwe_id || 'N/A')}</div>
       </td>
-      <td><span class="status-pill">${inc.status}</span></td>
+      <td><span class="status-pill">${escapeHtml(inc.status)}</span></td>
       <td>
-        <button class="btn btn-primary btn-sm" onclick="handleInvestigateClick('${inc.id}')">Investigate</button>
+        <button class="btn btn-primary btn-sm" data-incident-id="${escapeHtml(inc.id)}">Investigate</button>
       </td>
     `;
+    row.querySelector("[data-incident-id]").addEventListener("click", () => handleInvestigateClick(inc.id));
     tbody.appendChild(row);
   });
 }
@@ -275,10 +383,10 @@ function renderThreatMatrixTable(incidents) {
   incidents.forEach((inc) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><strong style="color:var(--primary); font-family:var(--font-mono);">${inc.id}</strong></td>
-      <td><code>${inc.service}</code></td>
-      <td style="font-size:11px;">${inc.threat_category || '-'}</td>
-      <td style="font-size:11px; color:#fca5a5;"><code>${inc.cwe_id || '-'}</code></td>
+      <td><strong style="color:var(--primary); font-family:var(--font-mono);">${escapeHtml(inc.id)}</strong></td>
+      <td><code>${escapeHtml(inc.service)}</code></td>
+      <td style="font-size:11px;">${escapeHtml(inc.threat_category || '-')}</td>
+      <td style="font-size:11px; color:#fca5a5;"><code>${escapeHtml(inc.cwe_id || '-')}</code></td>
     `;
     tbody.appendChild(tr);
   });
@@ -340,6 +448,8 @@ function selectIncident(id) {
   document.getElementById("wsCweMini").textContent = inc.cwe_id || "N/A";
   document.getElementById("wsThreatMini").textContent = inc.threat_category || "SYSTEM_FAULT";
   document.getElementById("wsRiskLevelBadge").textContent = inc.severity === "P1" ? "CRITICAL" : "HIGH";
+  document.getElementById("wsSlaMini").textContent = inc.severity === "P1" ? "< 30 minutes" : "< 2 hours";
+  document.getElementById("wsBlastMini").textContent = inc.service;
 
   // Load telemetry context for this incident into right inspector tabs
   loadIncidentTelemetryContext(inc.id, inc.service);
@@ -351,7 +461,7 @@ function selectIncident(id) {
 async function loadIncidentTelemetryContext(incidentId, service) {
   // Fetch logs
   try {
-    const resLogs = await fetch(`/api/logs?incident_id=${incidentId}&limit=15`);
+    const resLogs = await apiFetch(`/api/logs?incident_id=${encodeURIComponent(incidentId)}&limit=15`);
     const logs = await resLogs.json();
     const logsContainer = document.getElementById("wsLogsContainer");
     document.getElementById("wsLogsCountBadge").textContent = `${logs.length} Logs`;
@@ -366,10 +476,10 @@ async function loadIncidentTelemetryContext(incidentId, service) {
         const isFatal = l.level === "FATAL";
         entry.innerHTML = `
           <div class="log-entry-meta">
-            <span class="${isFatal ? 'log-lvl-fatal' : 'log-lvl-error'}">[${l.level}] ${l.service}</span>
-            <span>${l.timestamp.substring(11, 19)}</span>
+            <span class="${isFatal ? 'log-lvl-fatal' : 'log-lvl-error'}">[${escapeHtml(l.level)}] ${escapeHtml(l.service)}</span>
+            <span>${escapeHtml(l.timestamp.substring(11, 19))}</span>
           </div>
-          <div class="log-msg-text">${l.message}</div>
+          <div class="log-msg-text">${escapeHtml(l.message)}</div>
         `;
         logsContainer.appendChild(entry);
       });
@@ -380,7 +490,7 @@ async function loadIncidentTelemetryContext(incidentId, service) {
 
   // Fetch metrics
   try {
-    const resMetrics = await fetch(`/api/metrics?incident_id=${incidentId}`);
+    const resMetrics = await apiFetch(`/api/metrics?incident_id=${encodeURIComponent(incidentId)}`);
     const metrics = await resMetrics.json();
     const metricsContainer = document.getElementById("wsMetricsContainer");
     document.getElementById("wsMetricsCountBadge").textContent = `${metrics.length} Points`;
@@ -394,10 +504,10 @@ async function loadIncidentTelemetryContext(incidentId, service) {
         card.className = "metric-strip-card";
         card.innerHTML = `
           <div>
-            <span class="metric-name-text">${m.metric_name}</span>
-            <div style="font-size:10px; color:var(--text-dim);">${m.timestamp.substring(11, 19)}</div>
+            <span class="metric-name-text">${escapeHtml(m.metric_name)}</span>
+            <div style="font-size:10px; color:var(--text-dim);">${escapeHtml(m.timestamp.substring(11, 19))}</div>
           </div>
-          <div class="metric-val-text">${m.value} ${m.unit}</div>
+          <div class="metric-val-text">${escapeHtml(m.value)} ${escapeHtml(m.unit)}</div>
         `;
         metricsContainer.appendChild(card);
       });
@@ -408,7 +518,7 @@ async function loadIncidentTelemetryContext(incidentId, service) {
 
   // Fetch deployments
   try {
-    const resDeps = await fetch(`/api/deployments?incident_id=${incidentId}`);
+    const resDeps = await apiFetch(`/api/deployments?incident_id=${encodeURIComponent(incidentId)}`);
     const deps = await resDeps.json();
     const depsContainer = document.getElementById("wsDepsContainer");
     document.getElementById("wsDepsCountBadge").textContent = `${deps.length} Events`;
@@ -422,11 +532,11 @@ async function loadIncidentTelemetryContext(incidentId, service) {
         card.className = "dep-event-card";
         card.innerHTML = `
           <div class="dep-event-header">
-            <strong>${d.service}:${d.version}</strong>
-            <span>commit: ${d.commit_hash.substring(0, 8)}</span>
+            <strong>${escapeHtml(d.service)}:${escapeHtml(d.version)}</strong>
+            <span>commit: ${escapeHtml(d.commit_hash.substring(0, 8))}</span>
           </div>
-          <div class="dep-event-summary">${d.commit_message} (by ${d.author})</div>
-          <div style="font-size:10px; color:var(--text-dim); margin-top:4px;">${d.timestamp}</div>
+          <div class="dep-event-summary">${escapeHtml(d.commit_message)} (by ${escapeHtml(d.author)})</div>
+          <div style="font-size:10px; color:var(--text-dim); margin-top:4px;">${escapeHtml(d.timestamp)}</div>
         `;
         depsContainer.appendChild(card);
       });
@@ -439,20 +549,83 @@ async function loadIncidentTelemetryContext(incidentId, service) {
 // ------------------------------------------------------------------
 // 5. AUTONOMOUS INVESTIGATION WORKSPACE
 // ------------------------------------------------------------------
+function setPipelineState(state) {
+  const steps = [...document.querySelectorAll(".pipeline-step")];
+  const connectors = [...document.querySelectorAll(".pipeline-connector")];
+  steps.forEach((step) => step.classList.remove("active", "completed"));
+  connectors.forEach((connector) => connector.classList.remove("completed"));
+
+  if (state === "running" && steps.length > 0) {
+    steps[0].classList.add("active");
+  } else if (state === "complete") {
+    steps.forEach((step) => step.classList.add("completed"));
+    connectors.forEach((connector) => connector.classList.add("completed"));
+  }
+}
+
+function clearInvestigationResult() {
+  currentInvestigationData = null;
+  document.getElementById("wsCategory").textContent = "Pending";
+  document.getElementById("wsConfidence").textContent = "--";
+  document.getElementById("confidenceBreakdownCard").style.display = "none";
+  document.getElementById("wsTemporalText").textContent = "No completed investigation result.";
+  document.getElementById("wsSupportingText").textContent = "Evidence review is unavailable until an investigation completes.";
+  document.getElementById("wsContradictoryText").textContent = "Independent contradictory-signal detection is not implemented.";
+
+  const auditBox = document.getElementById("wsAuditBox");
+  auditBox.className = "audit-callout";
+  auditBox.style.removeProperty("background-color");
+  auditBox.style.removeProperty("border");
+  document.getElementById("wsAuditTitle").textContent = "Investigation result not available";
+  document.getElementById("wsAuditDesc").textContent = "No completed report is available for the selected incident.";
+
+  document.getElementById("wsMitigationList").replaceChildren();
+  document.getElementById("wsEvidenceList").replaceChildren();
+  document.getElementById("wsEvidenceBadge").textContent = "0 Items";
+  document.getElementById("wsEvidenceCountPill").textContent = "0";
+  renderExecutionTrace([], 0, 0);
+
+  for (const id of ["secRiskLevel", "secThreatVector", "secCwe", "secSla", "secBlastRadius", "ciaC", "ciaI", "ciaA"]) {
+    document.getElementById(id).textContent = "Not available";
+  }
+  document.getElementById("secAdvisoryText").textContent = "Risk assessment is unavailable until an investigation completes.";
+}
+
 async function runInvestigation(mode = "ai") {
   const diagEl = document.getElementById("wsDiagnosisText");
-  diagEl.textContent = `Analyzing telemetry across runbooks, logs, and metrics in ${mode === 'ai' ? 'Multi-Step AI' : 'Keyword Baseline'} mode...`;
+  const controls = [
+    document.getElementById("quickInvestigateBtn"),
+    document.getElementById("wsRunAiBtn"),
+    document.getElementById("wsRunBaseBtn")
+  ];
+  controls.forEach((control) => { control.disabled = true; });
+  clearInvestigationResult();
+  setPipelineState("running");
+  diagEl.textContent = `Analyzing bundled runbooks, logs, and metrics in ${mode === 'ai' ? 'Multi-Step Investigator' : 'Keyword Baseline'} mode...`;
 
   try {
-    const res = await fetch(`/api/investigate/${currentIncidentId}?mode=${mode}`, {
+    const res = await apiFetch(`/api/investigate/${encodeURIComponent(currentIncidentId)}?mode=${mode}`, {
       method: "POST"
     });
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error(`Investigation failed with HTTP ${res.status}`);
+    }
+    if (!res.ok) {
+      throw new Error(data.detail || `Investigation failed with HTTP ${res.status}`);
+    }
     currentInvestigationData = data;
     renderInvestigationView(data, mode);
     renderExecutionTrace(data.trace, data.steps_count, data.duration_seconds);
+    setPipelineState("complete");
   } catch (err) {
+    clearInvestigationResult();
     diagEl.textContent = "Error executing investigation: " + err.message;
+    setPipelineState("idle");
+  } finally {
+    controls.forEach((control) => { control.disabled = false; });
   }
 }
 
@@ -462,7 +635,7 @@ function renderInvestigationView(data, mode) {
   document.getElementById("wsCategory").textContent = data.category;
   document.getElementById("wsConfidence").textContent = `${Math.round(data.confidence_score * 100)}%`;
 
-  // 2. Calibrated Confidence Breakdown
+  // 2. Heuristic Confidence Breakdown
   const calib = data.confidence_breakdown;
   if (calib) {
     document.getElementById("calibLogVal").textContent = `${Math.round(calib.log_signal_weight * 100)}%`;
@@ -491,8 +664,8 @@ function renderInvestigationView(data, mode) {
   const contraText = document.getElementById("wsContradictoryText");
 
   if (mode === "ai") {
-    suppText.textContent = `Corroborated by ${data.evidence_chain.length} discrete telemetry artifacts across deployment history, error logs, and metrics.`;
-    contraText.textContent = "Zero contradictory signals detected: metric inflection points and stack traces strictly corroborate hypothesis.";
+    suppText.textContent = `${data.evidence_chain.length} evidence items were captured. Review their source records before relying on the diagnosis.`;
+    contraText.textContent = "Independent contradictory-signal detection is not implemented.";
   } else {
     suppText.textContent = `Heuristic match on generic error keywords in ${data.evidence_chain.length} logs.`;
     contraText.textContent = `Warning: Baseline lacks temporal alignment and failed to cross-check deployment diffs (${data.unsupported_claims.length} ungrounded assertions).`;
@@ -505,14 +678,14 @@ function renderInvestigationView(data, mode) {
 
   if (!data.unsupported_claims || data.unsupported_claims.length === 0) {
     auditBox.className = "audit-callout audit-success";
-    auditTitle.textContent = "Hallucination Audit: 0 Unsupported Claims (100% Grounded)";
-    auditDesc.textContent = "Every single causal claim has been audited against registered telemetry and deployment diffs.";
+    auditTitle.textContent = "Unsupported-claim flags: 0";
+    auditDesc.textContent = "No claims were flagged by the investigator's fallback check; this is not an independent claim-level audit.";
   } else {
     auditBox.className = "audit-callout";
     auditBox.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
     auditBox.style.border = "1px solid rgba(245, 158, 11, 0.3)";
     auditTitle.textContent = `Warning: ${data.unsupported_claims.length} Unsupported / Speculative Claim(s)`;
-    auditDesc.innerHTML = data.unsupported_claims.map(c => `• ${c}`).join("<br>");
+    auditDesc.textContent = data.unsupported_claims.map(c => `• ${c}`).join("\n");
   }
 
   // 6. Mitigations List
@@ -537,16 +710,29 @@ function renderInvestigationView(data, mode) {
   data.evidence_chain.forEach((ev) => {
     const item = document.createElement("div");
     item.className = "evidence-chain-item";
-    item.innerHTML = `
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span class="badge badge-category" style="font-size:10px;">${ev.id}</span>
-        <span style="font-size:10px; color:var(--text-dim); font-family:var(--font-mono);">${ev.timestamp ? ev.timestamp.substring(11, 19) : ''}</span>
-      </div>
-      <div style="font-size:11.5px; color:#cbd5e1; line-height:1.4;">${ev.summary}</div>
-      <div style="margin-top:5px; text-align:right;">
-        <button class="link-btn" onclick='openEvidenceModal(${JSON.stringify(ev.id)}, ${JSON.stringify(ev.source_type)}, ${JSON.stringify(ev.summary)}, ${JSON.stringify(JSON.stringify(ev.raw_data))})'>View JSON</button>
-      </div>
-    `;
+    const meta = document.createElement("div");
+    meta.style.cssText = "display:flex; justify-content:space-between; margin-bottom:4px;";
+    const id = document.createElement("span");
+    id.className = "badge badge-category";
+    id.style.fontSize = "10px";
+    id.textContent = ev.id;
+    const timestamp = document.createElement("span");
+    timestamp.style.cssText = "font-size:10px; color:var(--text-dim); font-family:var(--font-mono);";
+    timestamp.textContent = ev.timestamp ? ev.timestamp.substring(11, 19) : "";
+    meta.append(id, timestamp);
+
+    const summary = document.createElement("div");
+    summary.style.cssText = "font-size:11.5px; color:#cbd5e1; line-height:1.4;";
+    summary.textContent = ev.summary;
+
+    const actions = document.createElement("div");
+    actions.style.cssText = "margin-top:5px; text-align:right;";
+    const inspect = document.createElement("button");
+    inspect.className = "link-btn";
+    inspect.textContent = "View JSON";
+    inspect.addEventListener("click", () => openEvidenceModal(ev.id, ev.source_type, ev.summary, JSON.stringify(ev.raw_data)));
+    actions.appendChild(inspect);
+    item.append(meta, summary, actions);
     evList.appendChild(item);
   });
 
@@ -577,7 +763,7 @@ function renderSecurityTab(data) {
 // ------------------------------------------------------------------
 async function loadEvidenceExplorer() {
   try {
-    const res = await fetch(`/api/evidence?incident_id=${currentIncidentId}`);
+    const res = await apiFetch(`/api/evidence?incident_id=${encodeURIComponent(currentIncidentId)}`);
     allEvidenceItems = await res.json();
     renderEvidenceTable(allEvidenceItems);
     document.getElementById("evidenceTotalCount").textContent = allEvidenceItems.length;
@@ -615,16 +801,40 @@ function renderEvidenceTable(items) {
 
   items.forEach((ev) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><strong style="color:var(--primary); font-family:var(--font-mono);">${ev.id}</strong></td>
-      <td><span class="badge badge-category" style="font-size:10px;">${ev.source_type}</span></td>
-      <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim);">${ev.timestamp || '-'}</td>
-      <td><span class="badge ${ev.relevance === 'CRITICAL' ? 'badge-p1' : 'badge-neutral'}">${ev.relevance}</span></td>
-      <td style="max-width:320px; font-size:12px; color:#cbd5e1;">${ev.summary}</td>
-      <td>
-        <button class="btn btn-outline btn-sm" onclick='openEvidenceModal(${JSON.stringify(ev.id)}, ${JSON.stringify(ev.source_type)}, ${JSON.stringify(ev.summary)}, ${JSON.stringify(JSON.stringify(ev.raw_data))})'>Inspect Payload</button>
-      </td>
-    `;
+    const idCell = document.createElement("td");
+    const idText = document.createElement("strong");
+    idText.style.cssText = "color:var(--primary); font-family:var(--font-mono);";
+    idText.textContent = ev.id;
+    idCell.appendChild(idText);
+
+    const typeCell = document.createElement("td");
+    const typeBadge = document.createElement("span");
+    typeBadge.className = "badge badge-category";
+    typeBadge.style.fontSize = "10px";
+    typeBadge.textContent = ev.source_type;
+    typeCell.appendChild(typeBadge);
+
+    const timestampCell = document.createElement("td");
+    timestampCell.style.cssText = "font-family:var(--font-mono); font-size:11px; color:var(--text-dim);";
+    timestampCell.textContent = ev.timestamp || "-";
+
+    const relevanceCell = document.createElement("td");
+    const relevanceBadge = document.createElement("span");
+    relevanceBadge.className = `badge ${ev.relevance === "CRITICAL" ? "badge-p1" : "badge-neutral"}`;
+    relevanceBadge.textContent = ev.relevance;
+    relevanceCell.appendChild(relevanceBadge);
+
+    const summaryCell = document.createElement("td");
+    summaryCell.style.cssText = "max-width:320px; font-size:12px; color:#cbd5e1;";
+    summaryCell.textContent = ev.summary;
+
+    const actionCell = document.createElement("td");
+    const inspect = document.createElement("button");
+    inspect.className = "btn btn-outline btn-sm";
+    inspect.textContent = "Inspect Payload";
+    inspect.addEventListener("click", () => openEvidenceModal(ev.id, ev.source_type, ev.summary, JSON.stringify(ev.raw_data)));
+    actionCell.appendChild(inspect);
+    tr.append(idCell, typeCell, timestampCell, relevanceCell, summaryCell, actionCell);
     tbody.appendChild(tr);
   });
 }
@@ -665,19 +875,19 @@ function renderExecutionTrace(trace, stepsCount, duration) {
     card.className = "trace-step-card";
     card.innerHTML = `
       <div class="step-card-header">
-        <span class="step-num-badge">STEP ${step.step_num}</span>
-        <span class="step-tool-badge">${step.tool_name}()</span>
-        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); margin-left:auto;">${step.timestamp || ''}</span>
+        <span class="step-num-badge">STEP ${escapeHtml(step.step_num)}</span>
+        <span class="step-tool-badge">${escapeHtml(step.tool_name)}()</span>
+        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); margin-left:auto;">${escapeHtml(step.timestamp || '')}</span>
       </div>
-      <div class="step-thought"><strong>Thought:</strong> ${step.thought}</div>
+      <div class="step-thought"><strong>Thought:</strong> ${escapeHtml(step.thought)}</div>
       <div style="font-size:11px; color:var(--text-dim); margin-bottom:6px;">
-        <strong>Inputs:</strong> <code>${JSON.stringify(step.tool_args)}</code>
+        <strong>Inputs:</strong> <code>${escapeHtml(JSON.stringify(step.tool_args))}</code>
       </div>
-      <div class="step-output-box">${step.tool_result_preview}</div>
+      <div class="step-output-box">${escapeHtml(step.tool_result_preview)}</div>
       ${step.evidence_gathered && step.evidence_gathered.length > 0 ? `
         <div style="margin-top:8px; font-size:11px;">
           <strong style="color:var(--primary);">Registered Evidence:</strong> 
-          ${step.evidence_gathered.map(e => `<span class="badge badge-category" style="font-size:10px; margin-right:4px;">${e}</span>`).join('')}
+          ${step.evidence_gathered.map(e => `<span class="badge badge-category" style="font-size:10px; margin-right:4px;">${escapeHtml(e)}</span>`).join('')}
         </div>
       ` : ''}
     `;
@@ -693,7 +903,7 @@ async function runFullBenchmark() {
   tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Executing benchmark across all 10 injected incidents...</td></tr>';
 
   try {
-    const res = await fetch("/api/benchmark");
+    const res = await apiFetch("/api/benchmark");
     const data = await res.json();
 
     document.getElementById("benchAiAcc").textContent = `${data.investigator_accuracy}%`;
@@ -705,22 +915,22 @@ async function runFullBenchmark() {
     data.comparisons.forEach((c) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><strong style="color:var(--primary); font-family:var(--font-mono);">${c.incident_id}</strong></td>
-        <td><span class="badge badge-category" style="font-size:10px;">${c.category}</span></td>
-        <td style="font-size:11px; color:var(--text-dim); max-width:200px;">${c.ground_truth}</td>
+        <td><strong style="color:var(--primary); font-family:var(--font-mono);">${escapeHtml(c.incident_id)}</strong></td>
+        <td><span class="badge badge-category" style="font-size:10px;">${escapeHtml(c.category)}</span></td>
+        <td style="font-size:11px; color:var(--text-dim); max-width:200px;">${escapeHtml(c.ground_truth)}</td>
         <td style="font-size:12px; color:${c.investigator_correct ? '#34d399' : '#fb7185'};">
-          ${c.investigator_correct ? ' ' : ' '}<strong style="color:#ffffff;">${c.investigator_diagnosis}</strong>
+          ${c.investigator_correct ? ' ' : ' '}<strong style="color:#ffffff;">${escapeHtml(c.investigator_diagnosis)}</strong>
         </td>
         <td style="font-size:12px; color:${c.baseline_correct ? '#34d399' : '#94a3b8'};">
-          ${c.baseline_diagnosis}
+          ${escapeHtml(c.baseline_diagnosis)}
         </td>
-        <td><code>${c.investigator_evidence_count} items</code></td>
+        <td><code>${escapeHtml(c.investigator_evidence_count)} items</code></td>
         <td><span class="badge badge-grounded">AI ACCURATE</span></td>
       `;
       tbody.appendChild(tr);
     });
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--danger);">Benchmark failed: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--danger);">Benchmark failed: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -729,7 +939,7 @@ async function runFullBenchmark() {
 // ------------------------------------------------------------------
 async function loadSystemHealth() {
   try {
-    const res = await fetch("/api/health");
+    const res = await apiFetch("/api/health");
     const data = await res.json();
 
     const grid = document.getElementById("healthCardsGrid");
@@ -738,14 +948,17 @@ async function loadSystemHealth() {
     for (const [key, comp] of Object.entries(data.components)) {
       const card = document.createElement("div");
       card.className = "health-card";
+      const title = key === "telemetry_database"
+        ? "SYNTHETIC TELEMETRY STORE"
+        : key.replace(/_/g, " ").toUpperCase();
       card.innerHTML = `
         <div class="health-card-top">
-          <span class="health-card-title">${key.replace(/_/g, ' ').toUpperCase()}</span>
-          <span class="health-status-badge">${comp.status}</span>
+          <span class="health-card-title">${escapeHtml(title)}</span>
+          <span class="health-status-badge">${escapeHtml(comp.status)}</span>
         </div>
-        <p class="health-card-desc">${comp.details}</p>
-        <div style="font-size:11px; color:var(--primary); font-family:var(--font-mono); margin-top:8px;">
-          Latency: ${comp.latency_ms} ms
+        <p class="health-card-desc">${escapeHtml(comp.details)}</p>
+        <div style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono); margin-top:8px;">
+          ${comp.latency_ms == null ? "Latency not measured" : `Latency: ${escapeHtml(comp.latency_ms)} ms`}
         </div>
       `;
       grid.appendChild(card);

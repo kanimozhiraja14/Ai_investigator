@@ -20,14 +20,14 @@ from app.benchmark import run_benchmark
 
 def main():
     print("=" * 80)
-    print("AI INCIDENT INVESTIGATOR - VERIFICATION & PROOF SUITE")
+    print("AI INCIDENT INVESTIGATOR - DEMO VERIFICATION SUITE")
     print("=" * 80)
 
     # 1. Verify Incidents
     incidents = get_all_incidents()
-    print(f"\n[1] Verified 10 Injected Production Incidents:")
+    print(f"\n[1] Loaded 10 Bundled Synthetic Incident Scenarios:")
     for inc in incidents:
-        print(f"  • [{inc.id}] {inc.severity} | {inc.service:22} | {inc.title}")
+        print(f"  - [{inc.id}] {inc.severity} | {inc.service:22} | {inc.title}")
     assert len(incidents) == 10, "Expected 10 incidents"
 
     # 2. Test Runbook Retrieval
@@ -51,9 +51,9 @@ def main():
     print(f"\n[4] Testing Read-Only Investigation Mode (Mutation Blocker):")
     try:
         tools.execute_remediation_action("restart_service", "payment-service")
-        print("  ❌ ERROR: Mutation was NOT blocked!")
+        raise AssertionError("Mutation was not blocked")
     except ReadOnlyViolationError as e:
-        print(f"  ✅ SUCCESS: Mutation intercepted and blocked as expected:")
+        print("  [OK] Mutation intercepted and blocked as expected:")
         print(f"     \"{e}\"")
 
     # 5. Complete Investigation Trace (INC-001)
@@ -63,7 +63,7 @@ def main():
     print(f"Incident:    {res.incident_id} - {res.incident_title}")
     print(f"Mode:        {res.mode}")
     print(f"Duration:    {res.duration_seconds}s | Steps: {res.steps_count}")
-    print(f"Confidence:  {res.confidence_score * 100:.1f}%")
+    print(f"Heuristic confidence: {res.confidence_score * 100:.1f}%")
     print(f"\nPROPOSED ROOT CAUSE:")
     print(f"  >> {res.root_cause_diagnosis}")
     print(f"\nTEMPORAL CORRELATION:")
@@ -78,9 +78,9 @@ def main():
         print(f"  >> Blast Radius:   {ra.blast_radius}")
         print(f"  >> Remediation SLA:{ra.remediation_sla}")
         print(f"  >> Advisory:       {ra.security_advisory}")
-    print(f"\nUNSUPPORTED CLAIMS AUDIT:")
+    print(f"\nUNSUPPORTED-CLAIM FLAGS (NOT AN INDEPENDENT AUDIT):")
     if not res.unsupported_claims:
-        print("  >> 0 unsupported claims. 100% of claims verified against registered telemetry.")
+        print("  >> No claims were flagged by the investigator's current check.")
     else:
         for uc in res.unsupported_claims:
             print(f"  >> WARNING: {uc}")
@@ -97,17 +97,17 @@ def main():
 
     print(f"LINKED EVIDENCE ITEMS ({len(res.evidence_chain)} total):")
     for ev in res.evidence_chain[:5]:
-        print(f"  • [{ev.id}] {ev.summary}")
+        print(f"  - [{ev.id}] {ev.summary}")
     if len(res.evidence_chain) > 5:
         print(f"  ... and {len(res.evidence_chain) - 5} more evidence items.")
 
     print(f"\nRECOMMENDED RUNBOOK MITIGATIONS:")
     for m in res.mitigation_recommended:
-        print(f"  • {m}")
+        print(f"  - {m}")
     print("-" * 80)
 
     # 6. Benchmark Evaluation Proof across all 10 incidents
-    print(f"\n[6] BENCHMARK EVALUATION PROOF (AI Investigator vs Keyword Baseline across 10 Incidents):")
+    print(f"\n[6] PROJECT-HEURISTIC BENCHMARK (Investigator vs Keyword Baseline, 10 Scenarios):")
     report = run_benchmark()
     print("=" * 80)
     print(f"Metric                        | AI Investigator     | Keyword Baseline")
@@ -121,12 +121,12 @@ def main():
     print(f"{'ID':<9} | {'Category':<22} | {'AI Result':<11} | {'Baseline':<11} | {'AI Evidence':<11}")
     print("-" * 80)
     for c in report.comparisons:
-        ai_tag = "✅ CORRECT" if c.investigator_correct else "❌ WRONG"
-        base_tag = "✅ CORRECT" if c.baseline_correct else "❌ WRONG"
+        ai_tag = "CORRECT" if c.investigator_correct else "WRONG"
+        base_tag = "CORRECT" if c.baseline_correct else "WRONG"
         print(f"{c.incident_id:<9} | {c.category:<22} | {ai_tag:<11} | {base_tag:<11} | {c.investigator_evidence_count} items")
 
     print("\n" + "=" * 80)
-    print("ALL TESTS AND PROOF COMPLETE.")
+    print("DEMO RUN COMPLETE. See the audit report for evaluation limits.")
     print("=" * 80)
 
 

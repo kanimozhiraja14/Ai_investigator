@@ -2,16 +2,11 @@
 Benchmark evaluator comparing AI Incident Investigator against Keyword-Search Baseline.
 """
 
-import json
-from pathlib import Path
 from typing import List, Dict, Any
 from .models import BenchmarkReport, BenchmarkComparison
 from .telemetry import get_all_incidents
 from .investigator import investigator
 from .baseline import baseline
-
-BENCHMARK_OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "benchmark_results.json"
-
 
 def _evaluate_correctness(diagnosis: str, ground_truth: str, key_signals: List[str]) -> bool:
     """
@@ -58,13 +53,11 @@ def run_benchmark() -> BenchmarkReport:
 
         # Run Baseline
         base_res = baseline.investigate(inc.id)
-        # Baseline heuristic correctness:
-        # Check whether baseline captured the true root cause (not just generic symptom)
-        base_correct = False
-        if inc.id == "INC-003" and "logrotate" in base_res.root_cause_diagnosis.lower():
-            base_correct = True
-        elif inc.id == "INC-006" and "token" in base_res.root_cause_diagnosis.lower():
-            base_correct = True
+        base_correct = _evaluate_correctness(
+            base_res.root_cause_diagnosis,
+            inc.ground_truth_cause,
+            inc.key_signals
+        )
 
         if base_correct:
             base_correct_count += 1
@@ -101,12 +94,6 @@ def run_benchmark() -> BenchmarkReport:
         baseline_unsupported_rate=round((base_unsupported_total / n), 2),
         comparisons=comparisons
     )
-
-    try:
-        with open(BENCHMARK_OUTPUT_PATH, "w", encoding="utf-8") as f:
-            json.dump(report.model_dump(), f, indent=2)
-    except Exception as e:
-        print(f"Warning: Failed to save benchmark results to disk: {e}")
 
     return report
 

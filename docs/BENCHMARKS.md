@@ -1,5 +1,7 @@
 # AI Incident Investigator - Benchmark & Empirical Evaluation Report
 
+> **Audit status:** This legacy report overstates independent evaluation, evidence grounding, and production accuracy. The benchmark is a project-defined text heuristic over 10 bundled scenarios, not a human-reviewed or independent evaluation. See [`FINAL_QA_REPORT.md`](./FINAL_QA_REPORT.md) for audited results.
+
 ## 1. Evaluation Methodology
 
 To validate the technical superiority and real-world efficacy of the **AI Incident Investigator**, a systematic benchmark was conducted against a standard industry baseline: the **Keyword-Search Investigator** (simulating traditional log grep, Kibana term queries, and Elasticsearch full-text triage).

@@ -1,5 +1,7 @@
 # AI Incident Investigator - Testing Suite & Quality Assurance Report
 
+> **Audit status:** The results below are historical and the stated coverage claims are not independently validated. Current verification uses the full unittest command and the results in [`FINAL_QA_REPORT.md`](./FINAL_QA_REPORT.md).
+
 ## 1. Test Strategy & Architectural Verification
 
 The test suite provides 100% scenario coverage across the AI Incident Investigator system:

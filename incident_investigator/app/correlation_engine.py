@@ -3,7 +3,7 @@ Time-window correlation engine for aligning deployments, log anomalies, and metr
 """
 
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from .models import LogEntry, MetricPoint, DeploymentEvent
 from .telemetry import query_logs, query_metrics, query_deployments, get_incident
 
@@ -11,24 +11,42 @@ from .telemetry import query_logs, query_metrics, query_deployments, get_inciden
 class TimeWindowCorrelator:
     @staticmethod
     def _parse_iso(iso_str: str) -> datetime:
-        clean_str = iso_str.replace("Z", "+00:00")
-        return datetime.fromisoformat(clean_str)
+        try:
+            parsed = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid ISO 8601 timestamp: {iso_str!r}") from exc
+        if parsed.utcoffset() is None:
+            raise ValueError(f"Timestamp must include a timezone: {iso_str!r}")
+        return parsed.astimezone(timezone.utc)
 
     def correlate(self, incident_id: str, window_minutes_before: int = 30, window_minutes_after: int = 30) -> Dict[str, Any]:
         incident = get_incident(incident_id)
         if not incident:
             return {"error": f"Incident {incident_id} not found"}
+        if window_minutes_before < 0 or window_minutes_after < 0:
+            raise ValueError("Correlation window values must be non-negative")
 
         t_start = self._parse_iso(incident.start_time)
+        window_start = t_start - timedelta(minutes=window_minutes_before)
+        window_end = t_start + timedelta(minutes=window_minutes_after)
         
         # 1. Fetch deployments in window
-        deployments = query_deployments(incident_id, incident.service)
+        deployments = [
+            dep for dep in query_deployments(incident_id, incident.service)
+            if window_start <= self._parse_iso(dep.timestamp) <= window_end
+        ]
         
         # 2. Fetch all logs in window
-        logs = query_logs(incident_id, incident.service, limit=100)
+        logs = [
+            log for log in query_logs(incident_id, incident.service, limit=100)
+            if window_start <= self._parse_iso(log.timestamp) <= window_end
+        ]
         
         # 3. Fetch metrics
-        metrics = query_metrics(incident_id, incident.service)
+        metrics = [
+            metric for metric in query_metrics(incident_id, incident.service)
+            if window_start <= self._parse_iso(metric.timestamp) <= window_end
+        ]
 
         # Build chronological timeline of key events
         timeline_events = []
@@ -38,7 +56,7 @@ class TimeWindowCorrelator:
         for dep in deployments:
             dep_t = self._parse_iso(dep.timestamp)
             delta_sec = (t_start - dep_t).total_seconds()
-            is_causal_candidate = (-300 <= delta_sec <= 1800)  # within 5 mins after or 30 mins before
+            is_causal_candidate = 0 <= delta_sec <= window_minutes_before * 60
             
             event_obj = {
                 "type": "DEPLOYMENT",
@@ -54,7 +72,11 @@ class TimeWindowCorrelator:
 
         # Correlate error logs
         error_logs = [log for log in logs if log.level in ["ERROR", "FATAL"]]
-        first_error_log = error_logs[0] if error_logs else None
+        first_error_log = min(
+            error_logs,
+            key=lambda log: self._parse_iso(log.timestamp),
+            default=None
+        )
         
         for elog in error_logs[:5]:
             log_t = self._parse_iso(elog.timestamp)
@@ -102,15 +124,16 @@ class TimeWindowCorrelator:
                 })
 
         # Sort timeline chronologically
-        timeline_events.sort(key=lambda x: x["timestamp"])
+        timeline_events.sort(key=lambda event: self._parse_iso(event["timestamp"]))
 
         # Determine causal chain
         causality_finding = ""
         if correlated_deployments and any(d["causal_suspect"] for d in correlated_deployments):
             dep = [d for d in correlated_deployments if d["causal_suspect"]][0]
+            direction = "before" if dep["delta_from_incident_start_sec"] >= 0 else "after"
             causality_finding = (
                 f"High temporal correlation: Deployment {dep['id']} occurred at {dep['timestamp']} "
-                f"({int(abs(dep['delta_from_incident_start_sec']))}s before incident start), followed immediately by error logs."
+                f"({int(abs(dep['delta_from_incident_start_sec']))}s {direction} incident start), followed by error logs."
             )
         elif metric_anomalies:
             first_metric = metric_anomalies[0]

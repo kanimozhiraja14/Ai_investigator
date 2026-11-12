@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AEGIS // Autonomous SRE & Incident Command Platform</title>
+  <title>AEGIS // Synthetic Incident Investigation Demo</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,12 +125,12 @@
         <div class="safety-indicator">
           <span class="pulse-dot"></span>
           <div class="safety-text-group">
-            <span class="safety-text">STRICT READ-ONLY</span>
-            <span class="safety-sub">State Mutation Intercept: ON</span>
+            <span class="safety-text">READ-ONLY TOOL ACTIONS</span>
+            <span class="safety-sub">Mutation Guard: Enabled</span>
           </div>
         </div>
         <div class="version-label">
-          <span>Core v2.1.0</span>
+          <span>Core v2.0.0</span>
           <span class="status-online">CONNECTED</span>
         </div>
       </div>
@@ -159,6 +159,7 @@
         </div>
 
         <div class="header-actions">
+          <button id="apiAccessBtn" class="btn btn-ghost btn-sm" type="button">API access</button>
           <div class="active-incident-pill" id="headerActiveIncident">
             <span class="pill-dot"></span>
             <span>Target: <strong id="headerIncId">INC-001</strong></span>
@@ -190,8 +191,8 @@
         <section id="section-overview" class="view-section active">
           <div class="section-headline">
             <div>
-              <h1>System Telemetry &amp; Availability Overview</h1>
-              <p class="section-desc">Real-time status across monitored microservices, active incidents, and autonomous triage pipelines.</p>
+              <h1>Incident Scenario Overview</h1>
+              <p class="section-desc">Status and category summaries for the bundled synthetic incident scenarios.</p>
             </div>
             <div class="refresh-indicator">
               <span class="live-dot"></span>
@@ -209,7 +210,7 @@
                 </span>
               </div>
               <div class="kpi-value" id="kpiTotalIncidents">10</div>
-              <div class="kpi-footer">Across 10 distinct service domains</div>
+              <div class="kpi-footer">Bundled synthetic incident scenarios</div>
             </div>
 
             <div class="kpi-card border-danger">
@@ -236,24 +237,24 @@
 
             <div class="kpi-card border-success">
               <div class="kpi-header">
-                <span class="kpi-label">DIAGNOSIS ACCURACY</span>
+                <span class="kpi-label">OPEN INCIDENTS</span>
                 <span class="kpi-icon-badge badge-success-soft">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                 </span>
               </div>
-              <div class="kpi-value text-success" id="kpiAccuracy">100.0%</div>
-              <div class="kpi-footer">10 / 10 Ground-truth verified</div>
+              <div class="kpi-value text-success" id="kpiOpenIncidents">10</div>
+              <div class="kpi-footer">Currently marked OPEN in incident data</div>
             </div>
 
             <div class="kpi-card">
               <div class="kpi-header">
-                <span class="kpi-label">MEAN TIME TO TRIAGE</span>
+                <span class="kpi-label">INCIDENT CATEGORIES</span>
                 <span class="kpi-icon-badge">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </span>
               </div>
-              <div class="kpi-value text-accent">&lt; 1 ms</div>
-              <div class="kpi-footer">Sub-millisecond autonomous correlation</div>
+              <div class="kpi-value text-accent" id="kpiIncidentCategories">10</div>
+              <div class="kpi-footer">Distinct categories in incident data</div>
             </div>
           </div>
 
@@ -265,7 +266,7 @@
               <div class="panel-header">
                 <div class="panel-title-group">
                   <h3>Root-Cause Category Distribution</h3>
-                  <span class="panel-subtitle">10 verified architectural fault categories</span>
+                  <span class="panel-subtitle">Categories represented in incident data</span>
                 </div>
               </div>
               
@@ -286,7 +287,7 @@
               <div class="panel-header">
                 <div class="panel-title-group">
                   <h3>Recent Incident Queue</h3>
-                  <span class="panel-subtitle">Latest detected production anomalies</span>
+                  <span class="panel-subtitle">Bundled synthetic incident scenarios</span>
                 </div>
                 <button class="link-btn" onclick="switchSection('incidents')">
                   <span>View All 10 Incidents</span>
@@ -321,7 +322,7 @@
           <div class="section-headline">
             <div>
               <h1>Incident Management Roster</h1>
-              <p class="section-desc">Search, filter, and inspect injected production and security incident scenarios across the service fleet.</p>
+              <p class="section-desc">Search and filter the bundled synthetic service-incident scenarios.</p>
             </div>
             <div class="section-actions">
               <span class="counter-badge" id="rosterCountBadge">10 Total Incidents</span>
@@ -384,13 +385,13 @@
                 <span class="status-pill" id="wsStatus">OPEN</span>
                 <span class="readonly-pill">
                   <span class="pulse-dot-sm"></span>
-                  <span>READ-ONLY SANDBOX</span>
+                  <span>READ-ONLY TOOLS</span>
                 </span>
               </div>
               <div class="banner-cta">
                 <button id="wsRunAiBtn" class="btn btn-primary">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  <span>Run Multi-Step AI Agent</span>
+                  <span>Run Multi-Step Investigator</span>
                 </button>
                 <button id="wsRunBaseBtn" class="btn btn-outline">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -409,31 +410,31 @@
               <span id="wsAlertText" class="alert-msg">PaymentServiceHighErrorRate: 5xx error rate exceeded 12% in us-east-1</span>
             </div>
 
-            <!-- Autonomous Investigation Pipeline Progress -->
+            <!-- Investigation pipeline status -->
             <div class="investigation-pipeline">
-              <div class="pipeline-step completed" id="pipeStep1">
+              <div class="pipeline-step" id="pipeStep1">
                 <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="step-label">1. Alert Ingestion</div>
+                <div class="step-label">1. Incident Selection</div>
               </div>
-              <div class="pipeline-connector completed"></div>
-              <div class="pipeline-step completed" id="pipeStep2">
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-step" id="pipeStep2">
                 <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="step-label">2. BM25 Runbook RAG</div>
+                <div class="step-label">2. Runbook Retrieval</div>
               </div>
-              <div class="pipeline-connector completed"></div>
-              <div class="pipeline-step completed" id="pipeStep3">
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-step" id="pipeStep3">
                 <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="step-label">3. Temporal Alignment</div>
+                <div class="step-label">3. Time-Window Correlation</div>
               </div>
-              <div class="pipeline-connector completed"></div>
-              <div class="pipeline-step completed" id="pipeStep4">
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-step" id="pipeStep4">
                 <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="step-label">4. Evidence Verification</div>
+                <div class="step-label">4. Evidence Collection</div>
               </div>
-              <div class="pipeline-connector completed"></div>
-              <div class="pipeline-step completed" id="pipeStep5">
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-step" id="pipeStep5">
                 <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="step-label">5. RCA &amp; Remediation</div>
+                <div class="step-label">5. Root Cause &amp; Risk</div>
               </div>
             </div>
           </div>
@@ -452,56 +453,56 @@
                     <span class="badge badge-category" id="wsCategory">BAD_DEPLOYMENT</span>
                     <span class="badge badge-grounded">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span>EVIDENCE GROUNDED</span>
+                      <span>INVESTIGATION RESULT</span>
                     </span>
                   </div>
                   <div class="confidence-container">
-                    <span class="conf-label">Calibrated Confidence:</span>
-                    <span class="confidence-val" id="wsConfidence">98.0%</span>
+                    <span class="conf-label">Heuristic Confidence:</span>
+                    <span class="confidence-val" id="wsConfidence">--</span>
                   </div>
                 </div>
                 
                 <div class="diagnosis-callout" id="wsDiagnosisText">
-                  Click "Run Multi-Step AI Agent" to initiate autonomous investigation.
+                  Select an incident and run the multi-step investigator to inspect its bundled evidence.
                 </div>
 
-                <!-- Confidence Calibration Breakdown -->
+                <!-- Heuristic confidence breakdown -->
                 <div class="confidence-breakdown-card" id="confidenceBreakdownCard">
                   <div class="card-subtitle-row">
-                    <span class="card-subtitle">CALIBRATED CONFIDENCE MATRIX</span>
-                    <span class="conf-formula-label">4-Vector Bayesian Grounding</span>
+                    <span class="card-subtitle">HEURISTIC CONFIDENCE WEIGHTS</span>
+                    <span class="conf-formula-label">Signal availability weights</span>
                   </div>
                   <div class="calib-bars-grid">
                     <div class="calib-metric">
                       <div class="metric-info">
                         <span>Log Stack Trace Match (35%)</span>
-                        <span class="val" id="calibLogVal">98%</span>
+                        <span class="val" id="calibLogVal">--</span>
                       </div>
-                      <div class="progress-bar"><div class="fill" id="calibLogFill" style="width: 98%;"></div></div>
+                      <div class="progress-bar"><div class="fill" id="calibLogFill" style="width: 0%;"></div></div>
                     </div>
                     <div class="calib-metric">
                       <div class="metric-info">
                         <span>Metric Anomaly Match (25%)</span>
-                        <span class="val" id="calibMetricVal">96%</span>
+                        <span class="val" id="calibMetricVal">--</span>
                       </div>
-                      <div class="progress-bar"><div class="fill" id="calibMetricFill" style="width: 96%;"></div></div>
+                      <div class="progress-bar"><div class="fill" id="calibMetricFill" style="width: 0%;"></div></div>
                     </div>
                     <div class="calib-metric">
                       <div class="metric-info">
                         <span>Temporal Proximity (20%)</span>
-                        <span class="val" id="calibTemporalVal">95%</span>
+                        <span class="val" id="calibTemporalVal">--</span>
                       </div>
-                      <div class="progress-bar"><div class="fill" id="calibTemporalFill" style="width: 95%;"></div></div>
+                      <div class="progress-bar"><div class="fill" id="calibTemporalFill" style="width: 0%;"></div></div>
                     </div>
                     <div class="calib-metric">
                       <div class="metric-info">
                         <span>Runbook Symptom Match (20%)</span>
-                        <span class="val" id="calibRunbookVal">97%</span>
+                        <span class="val" id="calibRunbookVal">--</span>
                       </div>
-                      <div class="progress-bar"><div class="fill" id="calibRunbookFill" style="width: 97%;"></div></div>
+                      <div class="progress-bar"><div class="fill" id="calibRunbookFill" style="width: 0%;"></div></div>
                     </div>
                   </div>
-                  <p class="calib-explanation" id="calibExplanationText">Calibrated across 4 independent telemetry vectors.</p>
+                  <p class="calib-explanation" id="calibExplanationText">Heuristic weights are not statistically calibrated.</p>
                 </div>
 
                 <!-- Temporal Correlation Finding -->
@@ -520,16 +521,16 @@
                   <div class="verif-panel verif-supporting">
                     <div class="verif-header">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span>Corroborating Evidence</span>
+                      <span>Captured Evidence</span>
                     </div>
-                    <div class="verif-content" id="wsSupportingText">All observed telemetry signals corroborate root-cause hypothesis.</div>
+                    <div class="verif-content" id="wsSupportingText">Evidence review is unavailable until an investigation completes.</div>
                   </div>
                   <div class="verif-panel verif-contradictory">
                     <div class="verif-header">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                      <span>Contradictory Signal Auditor</span>
+                      <span>Contradictory Signal Review</span>
                     </div>
-                    <div class="verif-content" id="wsContradictoryText">No contradictory signals detected: error spikes align strictly with deployment manifest diff.</div>
+                    <div class="verif-content" id="wsContradictoryText">Independent contradictory-signal detection is not implemented.</div>
                   </div>
                 </div>
 
@@ -539,8 +540,8 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </span>
                   <div>
-                    <strong id="wsAuditTitle">Hallucination Audit: 0 Unsupported Claims (100% Grounded)</strong>
-                    <div class="audit-details" id="wsAuditDesc">Every causal assertion links directly to an immutable telemetry ledger entry.</div>
+                    <strong id="wsAuditTitle">Unsupported-claim flags are reported after investigation.</strong>
+                      <div class="audit-details" id="wsAuditDesc">The investigator does not perform an independent claim-level audit.</div>
                   </div>
                 </div>
               </div>
@@ -549,8 +550,8 @@
               <div class="panel">
                 <div class="panel-header">
                   <div class="panel-title-group">
-                    <h3>Actionable Remediation &amp; Mitigation Protocol</h3>
-                    <span class="panel-subtitle">Synthesized from institutional operational runbook</span>
+                    <h3>Recommended Runbook Guidance</h3>
+                    <span class="panel-subtitle">Suggestions only; no remediation action is executed</span>
                   </div>
                 </div>
                 <ul class="mitigation-checklist" id="wsMitigationList">
@@ -658,10 +659,10 @@
         <section id="section-evidence" class="view-section">
           <div class="section-headline">
             <div>
-              <h1>Immutable Evidence Explorer</h1>
-              <p class="section-desc">Search, filter, and inspect verified telemetry evidence artifacts registered in the immutable ledger.</p>
+              <h1>Evidence Explorer</h1>
+              <p class="section-desc">Search and inspect telemetry records captured during the selected investigation. Evidence is held in memory and is not tamper-evident.</p>
             </div>
-            <div class="evidence-stats-pill">Total Ledger Artifacts: <span id="evidenceTotalCount">0</span></div>
+            <div class="evidence-stats-pill">Evidence Items: <span id="evidenceTotalCount">0</span></div>
           </div>
 
           <div class="filter-toolbar">
@@ -674,6 +675,7 @@
               <option value="LOG">Application Logs (LOG)</option>
               <option value="METRIC">Metric Timeseries (METRIC)</option>
               <option value="DEPLOYMENT">Deployment Rollouts (DEPLOYMENT)</option>
+              <option value="CORRELATION">Correlation Summary (CORRELATION)</option>
               <option value="RUNBOOK">Runbook Guidance (RUNBOOK)</option>
               <option value="RISK">Risk Models (RISK)</option>
             </select>
@@ -801,7 +803,7 @@
           <div class="section-headline">
             <div>
               <h1>Comparative Benchmark Center</h1>
-              <p class="section-desc">Empirical side-by-side evaluation: Multi-Step AI Investigator vs. Keyword-Search Baseline across 10 production outage scenarios.</p>
+              <p class="section-desc">Project-defined comparison of the rule-based investigator and keyword baseline on 10 bundled scenarios.</p>
             </div>
             <div class="benchmark-actions">
               <button id="runFullBenchBtn" class="btn btn-primary">
@@ -820,22 +822,22 @@
             <div class="bench-kpi-card highlight">
               <span class="kpi-label">AI ROOT-CAUSE ACCURACY</span>
               <div class="kpi-value text-success" id="benchAiAcc">100.0%</div>
-              <div class="kpi-footer">10 / 10 Ground Truth Matches (100% Proven)</div>
+              <div class="kpi-footer">Project text-matching heuristic; bundled scenarios only</div>
             </div>
             <div class="bench-kpi-card">
               <span class="kpi-label">KEYWORD BASELINE ACCURACY</span>
               <div class="kpi-value text-danger" id="benchBaseAcc">0.0%</div>
-              <div class="kpi-footer">0 / 10 (Fails on underlying causal triggers)</div>
+              <div class="kpi-footer">Project text-matching heuristic; bundled scenarios only</div>
             </div>
             <div class="bench-kpi-card highlight">
               <span class="kpi-label">AI UNSUPPORTED CLAIMS</span>
               <div class="kpi-value text-success" id="benchAiClaims">0.00</div>
-              <div class="kpi-footer">Per incident (100% telemetry verified)</div>
+              <div class="kpi-footer">Investigator-reported flags per incident</div>
             </div>
             <div class="bench-kpi-card">
               <span class="kpi-label">BASELINE UNSUPPORTED CLAIMS</span>
               <div class="kpi-value text-warning" id="benchBaseClaims">1.80</div>
-              <div class="kpi-footer">Per incident (Speculative ungrounded guesses)</div>
+              <div class="kpi-footer">Baseline-reported flags per incident</div>
             </div>
           </div>
 
@@ -853,7 +855,7 @@
                   <th>Incident ID</th>
                   <th>Category</th>
                   <th>Ground Truth Trigger</th>
-                  <th>AI Investigator Diagnosis</th>
+                  <th>Multi-Step Investigator Diagnosis</th>
                   <th>Keyword Baseline Diagnosis</th>
                   <th>AI Evidence</th>
                   <th>Verdict</th>
@@ -889,8 +891,8 @@
         <section id="section-health" class="view-section">
           <div class="section-headline">
             <div>
-              <h1>System Health &amp; Security Boundary Status</h1>
-              <p class="section-desc">Real-time status of backend subsystems, BM25 retriever, and sandboxed read-only policies.</p>
+              <h1>Process and Demo Component Status</h1>
+              <p class="section-desc">Process status for the API and the bundled, in-memory demo components.</p>
             </div>
             <button id="refreshHealthBtn" class="btn btn-outline btn-sm">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -906,16 +908,37 @@
             <div class="panel-header">
               <div class="panel-title-group">
                 <h3>Deterministic Read-Only Policy Enforcement</h3>
-                <span class="panel-subtitle">Architectural defense-in-depth guarantees</span>
+                <span class="panel-subtitle">Input filtering only; not a sandbox boundary</span>
               </div>
             </div>
             <div class="policy-details">
-              <p>The AI Incident Investigator operates under a <strong>STRICT READ-ONLY SANDBOX</strong>. All diagnostic queries are filtered by an in-process <code>ReadOnlyGuard</code> that parses parameters and rejects mutation verbs (including <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>DROP</code>, <code>ALTER</code>, <code>TRUNCATE</code>, <code>EXEC</code>, <code>SYSTEM</code>, and <code>WRITE</code>). Mutating invocations raise a <code>ReadOnlyViolationError</code>, preventing state corruption during active triage.</p>
+              <p>Investigation tools read bundled telemetry and reject selected mutation keywords with an in-process guard. This input check is not a sandbox or production security boundary; it does not isolate the process or restrict operating-system and network access.</p>
             </div>
           </div>
         </section>
 
       </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="apiAccessModal">
+    <div class="modal-dialog auth-dialog" role="dialog" aria-modal="true" aria-labelledby="apiAccessTitle">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="apiAccessTitle">Connect to the API</h3>
+        </div>
+        <button class="modal-close-btn" id="apiAccessCloseBtn" type="button" aria-label="Close dialog">&times;</button>
+      </div>
+      <form class="modal-body" id="apiAccessForm">
+        <p class="auth-help">Enter the bearer token configured by the service operator. It remains in memory only and is cleared when this page is reloaded.</p>
+        <label for="apiTokenInput">API bearer token</label>
+        <input id="apiTokenInput" class="auth-token-input" type="password" autocomplete="off" spellcheck="false">
+        <p id="apiAccessMessage" class="auth-message" role="status"></p>
+        <div class="auth-actions">
+          <button class="btn btn-primary btn-sm" type="submit">Connect</button>
+          <button class="btn btn-ghost btn-sm" id="apiAccessDisconnectBtn" type="button">Disconnect</button>
+        </div>
+      </form>
     </div>
   </div>
 

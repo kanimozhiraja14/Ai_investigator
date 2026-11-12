@@ -3,6 +3,8 @@ Read-only investigation tools with evidence registration, security guard, and mu
 """
 
 import re
+from functools import wraps
+from threading import Lock
 from typing import Dict, Any, List, Optional
 from .models import EvidenceItem, LogEntry, MetricPoint, DeploymentEvent, RiskAnalysis
 from .telemetry import query_logs, query_metrics, query_deployments, get_incident
@@ -20,6 +22,28 @@ FORBIDDEN_MUTATION_REGEX = re.compile(
     r"EXEC|SYSTEM|SHUTDOWN|KILL|REBOOT|WRITE|RM|DEL|POST|PUT|PATCH)\b",
     re.IGNORECASE
 )
+
+_tool_failure_lock = Lock()
+_tool_failure_count = 0
+
+
+def get_tool_failure_count() -> int:
+    with _tool_failure_lock:
+        return _tool_failure_count
+
+
+def _track_tool_failures(method):
+    @wraps(method)
+    def tracked(*args, **kwargs):
+        try:
+            return method(*args, **kwargs)
+        except Exception:
+            global _tool_failure_count
+            with _tool_failure_lock:
+                _tool_failure_count += 1
+            raise
+
+    return tracked
 
 
 def _validate_read_only_args(**kwargs):
@@ -60,9 +84,12 @@ class InvestigationToolRegistry:
 
     # --- Read-Only Tools ---
 
+    @_track_tool_failures
     def query_logs_tool(self, incident_id: str, service: Optional[str] = None, level: Optional[str] = None, search: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
         """Query structured logs and capture discovered records as verified evidence."""
         _validate_read_only_args(incident_id=incident_id, service=service, level=level, search=search)
+        if not get_incident(incident_id):
+            raise ValueError(f"Incident {incident_id} not found")
         logs = query_logs(incident_id, service=service, level=level, search=search, limit=limit)
         captured_ids = []
         for log in logs:
@@ -83,15 +110,18 @@ class InvestigationToolRegistry:
             "evidence_registered": captured_ids
         }
 
+    @_track_tool_failures
     def query_metrics_tool(self, incident_id: str, service: Optional[str] = None, metric_name: Optional[str] = None) -> Dict[str, Any]:
         """Query metric timeseries to identify saturation, error rate spikes, or latency anomalies."""
         _validate_read_only_args(incident_id=incident_id, service=service, metric_name=metric_name)
+        if not get_incident(incident_id):
+            raise ValueError(f"Incident {incident_id} not found")
         metrics = query_metrics(incident_id, service=service, metric_name=metric_name)
         captured_ids = []
         for m in metrics:
             evid_id = self.register_evidence(
                 source_type="METRIC",
-                source_id=f"{m.service}_{m.metric_name}",
+                source_id=f"{m.service}_{m.metric_name}_{m.timestamp}",
                 summary=f"Metric {m.metric_name} for {m.service} recorded {m.value}{m.unit} at {m.timestamp}",
                 raw_data=m.model_dump(),
                 timestamp=m.timestamp,
@@ -106,9 +136,12 @@ class InvestigationToolRegistry:
             "evidence_registered": captured_ids
         }
 
+    @_track_tool_failures
     def get_deployments_tool(self, incident_id: str, service: Optional[str] = None) -> Dict[str, Any]:
         """Query deployment history to determine if a software release or configuration change triggered the incident."""
         _validate_read_only_args(incident_id=incident_id, service=service)
+        if not get_incident(incident_id):
+            raise ValueError(f"Incident {incident_id} not found")
         deployments = query_deployments(incident_id, service=service)
         captured_ids = []
         for dep in deployments:
@@ -128,6 +161,7 @@ class InvestigationToolRegistry:
             "evidence_registered": captured_ids
         }
 
+    @_track_tool_failures
     def search_runbooks_tool(self, query: str, service: Optional[str] = None) -> Dict[str, Any]:
         """Search runbook knowledge base using BM25 relevance scoring."""
         _validate_read_only_args(query=query, service=service)
@@ -161,15 +195,28 @@ class InvestigationToolRegistry:
             "runbook": rb.model_dump()
         }
 
+    @_track_tool_failures
     def correlate_signals_tool(self, incident_id: str) -> Dict[str, Any]:
         """Correlate temporal signals across deployments, error logs, and metric spikes."""
         _validate_read_only_args(incident_id=incident_id)
+        if not get_incident(incident_id):
+            raise ValueError(f"Incident {incident_id} not found")
         result = correlator.correlate(incident_id)
+        evidence_id = self.register_evidence(
+            source_type="CORRELATION",
+            source_id=f"CORRELATION-{incident_id}",
+            summary=result["causality_finding"],
+            raw_data=result,
+            timestamp=result["incident_start_time"],
+            relevance="HIGH"
+        )
         return {
             "status": "SUCCESS",
-            "correlation": result
+            "correlation": result,
+            "evidence_registered": [evidence_id]
         }
 
+    @_track_tool_failures
     def assess_risk_tool(self, incident_id: str, proposed_cause: str, category: str) -> Dict[str, Any]:
         """
         Perform cybersecurity risk analysis and impact assessment on the identified root cause.
@@ -177,9 +224,11 @@ class InvestigationToolRegistry:
         """
         _validate_read_only_args(incident_id=incident_id, proposed_cause=proposed_cause, category=category)
         incident = get_incident(incident_id)
-        threat_vector = incident.threat_category if incident and incident.threat_category else "UNCLASSIFIED_SYSTEM_FAULT"
-        cwe = incident.cwe_id if incident and incident.cwe_id else "CWE-693"
-        severity = incident.severity if incident else "P1"
+        if not incident:
+            raise ValueError(f"Incident {incident_id} not found")
+        threat_vector = incident.threat_category or "UNCLASSIFIED_SYSTEM_FAULT"
+        cwe = incident.cwe_id or "CWE-693"
+        severity = incident.severity
 
         # Determine CIA Impact profile based on incident category
         cia_profile = {
@@ -197,7 +246,7 @@ class InvestigationToolRegistry:
 
         risk_level = "CRITICAL" if severity == "P1" else "HIGH"
         sla = "< 30 minutes (Immediate Action Required)" if severity == "P1" else "< 2 hours (High Priority)"
-        service_name = incident.service if incident else "unknown"
+        service_name = incident.service
 
         advisory = (
             f"Security Advisory for {service_name}: Root cause '{category}' mapped to {cwe}. "

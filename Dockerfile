@@ -26,7 +26,6 @@ ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Copy application code
 COPY incident_investigator ./incident_investigator
-COPY benchmark_results.json .
 COPY README.md .
 
 # Set permissions
@@ -38,9 +37,11 @@ EXPOSE 8000
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    APP_ENV=production \
+    LOG_LEVEL=INFO \
     PORT=8000
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/healthz', timeout=2)" || exit 1
 
-CMD ["uvicorn", "incident_investigator.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "incident_investigator.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "5", "--limit-concurrency", "100", "--timeout-graceful-shutdown", "25", "--no-access-log"]
