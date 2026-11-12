@@ -3,61 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Incident Investigator - Enterprise Command Center</title>
+  <title>AEGIS // Autonomous SRE & Incident Command Platform</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="enterprise-layout">
     
-    <!-- LEFT SIDEBAR NAVIGATION -->
+    <!-- ========================================================
+         LEFT SIDEBAR NAVIGATION
+         ======================================================== -->
     <aside class="sidebar-nav">
       <div class="nav-brand">
         <div class="brand-symbol">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
           </svg>
         </div>
         <div class="brand-info">
-          <h2>AEGIS-INVESTIGATOR</h2>
-          <span class="brand-sub">Enterprise SRE / SOC</span>
+          <h2>AEGIS INVESTIGATOR</h2>
+          <span class="brand-sub">SRE &amp; SOC Command Core</span>
         </div>
       </div>
 
+      <div class="nav-category-label">OPERATIONS &amp; TRIAGE</div>
+
       <nav class="nav-links">
         <button class="nav-item active" data-section="overview">
-          <span class="nav-icon">📊</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9" rx="1"/>
+              <rect x="14" y="3" width="7" height="5" rx="1"/>
+              <rect x="14" y="12" width="7" height="9" rx="1"/>
+              <rect x="3" y="16" width="7" height="5" rx="1"/>
+            </svg>
+          </span>
           <span class="nav-text">Overview</span>
         </button>
+
         <button class="nav-item" data-section="incidents">
-          <span class="nav-icon">🚨</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </span>
           <span class="nav-text">Incident Roster</span>
           <span class="nav-badge" id="navIncCount">10</span>
         </button>
+
         <button class="nav-item" data-section="workspace">
-          <span class="nav-icon">🔬</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="6"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+          </span>
           <span class="nav-text">Investigation Hub</span>
+          <span class="nav-badge-pill" id="navActiveTargetBadge">INC-001</span>
         </button>
+
+        <div class="nav-category-label">INTELLIGENCE &amp; AUDIT</div>
+
         <button class="nav-item" data-section="evidence">
-          <span class="nav-icon">📁</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </span>
           <span class="nav-text">Evidence Explorer</span>
         </button>
+
         <button class="nav-item" data-section="security">
-          <span class="nav-icon">🛡️</span>
-          <span class="nav-text">Risk & CWE Analysis</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </span>
+          <span class="nav-text">Risk &amp; CWE Analysis</span>
         </button>
+
         <button class="nav-item" data-section="benchmark">
-          <span class="nav-icon">⚡</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </span>
           <span class="nav-text">Benchmark Center</span>
         </button>
+
         <button class="nav-item" data-section="trace">
-          <span class="nav-icon">📜</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </span>
           <span class="nav-text">Execution Trace</span>
         </button>
+
         <button class="nav-item" data-section="health">
-          <span class="nav-icon">💚</span>
+          <span class="nav-svg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </span>
           <span class="nav-text">System Health</span>
         </button>
       </nav>
@@ -65,29 +124,60 @@
       <div class="sidebar-footer">
         <div class="safety-indicator">
           <span class="pulse-dot"></span>
-          <span class="safety-text">STRICT READ-ONLY</span>
+          <div class="safety-text-group">
+            <span class="safety-text">STRICT READ-ONLY</span>
+            <span class="safety-sub">State Mutation Intercept: ON</span>
+          </div>
         </div>
-        <div class="version-label">v2.0.0 Enterprise</div>
+        <div class="version-label">
+          <span>Core v2.1.0</span>
+          <span class="status-online">CONNECTED</span>
+        </div>
       </div>
     </aside>
 
-    <!-- MAIN APPLICATION VIEWPORT -->
+    <!-- ========================================================
+         MAIN APPLICATION VIEWPORT
+         ======================================================== -->
     <div class="main-viewport">
       
       <!-- TOP COMMAND BAR -->
       <header class="top-header">
-        <div class="header-breadcrumb">
-          <span class="bc-root">Incident Center</span>
-          <span class="bc-sep">/</span>
-          <span class="bc-current" id="breadcrumbSection">Overview</span>
+        <div class="header-left">
+          <div class="header-breadcrumb">
+            <span class="bc-root">SRE Platform</span>
+            <span class="bc-sep">/</span>
+            <span class="bc-current" id="breadcrumbSection">Overview</span>
+          </div>
+
+          <div class="incident-selector-wrapper">
+            <label for="incidentQuickSelect" class="selector-label">Target Incident:</label>
+            <select id="incidentQuickSelect" class="incident-select-dropdown">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
         </div>
+
         <div class="header-actions">
           <div class="active-incident-pill" id="headerActiveIncident">
             <span class="pill-dot"></span>
             <span>Target: <strong id="headerIncId">INC-001</strong></span>
           </div>
-          <button id="quickInvestigateBtn" class="btn btn-primary btn-sm">⚡ Run Investigation</button>
-          <a href="/docs" target="_blank" class="btn btn-ghost btn-sm">📖 Swagger API</a>
+
+          <button id="quickInvestigateBtn" class="btn btn-primary btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>Run Investigation</span>
+          </button>
+
+          <a href="/docs" target="_blank" class="btn btn-ghost btn-sm" title="View OpenAPI Specification">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span>Swagger API</span>
+          </a>
         </div>
       </header>
 
@@ -100,55 +190,125 @@
         <section id="section-overview" class="view-section active">
           <div class="section-headline">
             <div>
-              <h1>Security & Availability Overview</h1>
-              <p class="section-desc">Real-time status across monitored microservices and active incident response workflows.</p>
+              <h1>System Telemetry &amp; Availability Overview</h1>
+              <p class="section-desc">Real-time status across monitored microservices, active incidents, and autonomous triage pipelines.</p>
             </div>
-            <div class="refresh-indicator">Last updated: <span id="statsUpdatedTime">Just now</span></div>
+            <div class="refresh-indicator">
+              <span class="live-dot"></span>
+              <span>Updated: <strong id="statsUpdatedTime">Just now</strong></span>
+            </div>
           </div>
 
           <!-- KPI Metric Grid -->
           <div class="stats-grid">
             <div class="kpi-card">
-              <span class="kpi-label">TOTAL INCIDENTS</span>
+              <div class="kpi-header">
+                <span class="kpi-label">TOTAL INCIDENTS</span>
+                <span class="kpi-icon-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </span>
+              </div>
               <div class="kpi-value" id="kpiTotalIncidents">10</div>
-              <div class="kpi-footer">Across 10 services</div>
+              <div class="kpi-footer">Across 10 distinct service domains</div>
             </div>
+
             <div class="kpi-card border-danger">
-              <span class="kpi-label">CRITICAL / P1 SEVERITY</span>
+              <div class="kpi-header">
+                <span class="kpi-label">CRITICAL / P1 SEVERITY</span>
+                <span class="kpi-icon-badge badge-danger-soft">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                </span>
+              </div>
               <div class="kpi-value text-danger" id="kpiP1Incidents">7</div>
-              <div class="kpi-footer">High operational impact</div>
+              <div class="kpi-footer">Immediate SLA impact (< 30m)</div>
             </div>
+
             <div class="kpi-card border-warning">
-              <span class="kpi-label">HIGH / P2 SEVERITY</span>
+              <div class="kpi-header">
+                <span class="kpi-label">HIGH / P2 SEVERITY</span>
+                <span class="kpi-icon-badge badge-warning-soft">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                </span>
+              </div>
               <div class="kpi-value text-warning" id="kpiP2Incidents">3</div>
-              <div class="kpi-footer">Degraded functionality</div>
+              <div class="kpi-footer">Degraded service functionality</div>
             </div>
+
             <div class="kpi-card border-success">
-              <span class="kpi-label">ROOT-CAUSE ACCURACY</span>
-              <div class="kpi-value text-success">100.0%</div>
+              <div class="kpi-header">
+                <span class="kpi-label">DIAGNOSIS ACCURACY</span>
+                <span class="kpi-icon-badge badge-success-soft">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+              </div>
+              <div class="kpi-value text-success" id="kpiAccuracy">100.0%</div>
               <div class="kpi-footer">10 / 10 Ground-truth verified</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">MEAN TIME TO TRIAGE</span>
+                <span class="kpi-icon-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </span>
+              </div>
+              <div class="kpi-value text-accent">&lt; 1 ms</div>
+              <div class="kpi-footer">Sub-millisecond autonomous correlation</div>
             </div>
           </div>
 
+          <!-- Overview Panels Grid -->
           <div class="overview-panels-grid">
-            <!-- Root Cause Distribution -->
+            
+            <!-- Root Cause Category Distribution -->
             <div class="panel">
               <div class="panel-header">
-                <h3>Root-Cause Category Distribution</h3>
+                <div class="panel-title-group">
+                  <h3>Root-Cause Category Distribution</h3>
+                  <span class="panel-subtitle">10 verified architectural fault categories</span>
+                </div>
               </div>
-              <div class="category-bars" id="categoryBarsContainer">
-                <!-- Dynamically populated -->
+              
+              <!-- Stacked Segmented Distribution Bar -->
+              <div class="segmented-bar-wrapper">
+                <div class="segmented-bar" id="overviewSegmentedBar">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+
+              <div class="category-grid" id="categoryBarsContainer">
+                <!-- Dynamically populated category chips -->
               </div>
             </div>
 
-            <!-- Recent Incidents Snapshot -->
+            <!-- Recent Incidents Snapshot Table -->
             <div class="panel">
               <div class="panel-header">
-                <h3>Recent Incident Queue</h3>
-                <button class="link-btn" onclick="switchSection('incidents')">View Roster →</button>
+                <div class="panel-title-group">
+                  <h3>Recent Incident Queue</h3>
+                  <span class="panel-subtitle">Latest detected production anomalies</span>
+                </div>
+                <button class="link-btn" onclick="switchSection('incidents')">
+                  <span>View All 10 Incidents</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
               </div>
-              <div class="recent-list" id="recentIncidentsList">
-                <!-- Dynamically populated -->
+
+              <div class="table-container">
+                <table class="enterprise-table table-compact">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Severity</th>
+                      <th>Service</th>
+                      <th>Title &amp; Anomaly</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentIncidentsList">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -161,23 +321,27 @@
           <div class="section-headline">
             <div>
               <h1>Incident Management Roster</h1>
-              <p class="section-desc">Search, filter, and inspect injected production and security incident scenarios.</p>
+              <p class="section-desc">Search, filter, and inspect injected production and security incident scenarios across the service fleet.</p>
+            </div>
+            <div class="section-actions">
+              <span class="counter-badge" id="rosterCountBadge">10 Total Incidents</span>
             </div>
           </div>
 
           <!-- Filters bar -->
           <div class="filter-toolbar">
             <div class="search-input-wrapper">
-              <input type="text" id="incidentSearchInput" placeholder="Search by ID, service, title, or alert...">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="incidentSearchInput" placeholder="Filter by ID, service name, title, or alert...">
             </div>
             <select id="severityFilter" class="filter-select">
               <option value="">All Severities</option>
-              <option value="P1">P1 - Critical</option>
-              <option value="P2">P2 - High</option>
+              <option value="P1">P1 - Critical Severity</option>
+              <option value="P2">P2 - High Severity</option>
             </select>
             <select id="statusFilter" class="filter-select">
               <option value="">All Statuses</option>
-              <option value="OPEN">OPEN</option>
+              <option value="OPEN">OPEN (Active Outage)</option>
               <option value="INVESTIGATING">INVESTIGATING</option>
               <option value="RESOLVED">RESOLVED</option>
             </select>
@@ -192,7 +356,7 @@
                   <th>Severity</th>
                   <th>Service</th>
                   <th>Detection Time</th>
-                  <th>Title & Alert</th>
+                  <th>Incident Title &amp; Trigger Alert</th>
                   <th>Threat Vector / CWE</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -206,39 +370,90 @@
         </section>
 
         <!-- ========================================================
-             3. AI INVESTIGATION WORKSPACE
+             3. AI INVESTIGATION WORKSPACE (Core Page)
              ======================================================== -->
         <section id="section-workspace" class="view-section">
+          
           <!-- Active Incident Banner -->
           <div class="workspace-banner">
-            <div class="banner-headline">
+            <div class="banner-top-row">
               <div class="meta-row">
                 <span class="badge badge-p1" id="wsSeverity">P1</span>
                 <span class="service-pill" id="wsService">payment-service</span>
                 <span class="timestamp-pill" id="wsTime">2026-11-12T14:02:00Z</span>
                 <span class="status-pill" id="wsStatus">OPEN</span>
+                <span class="readonly-pill">
+                  <span class="pulse-dot-sm"></span>
+                  <span>READ-ONLY SANDBOX</span>
+                </span>
               </div>
-              <h2 id="wsTitle">INC-001: Payment Service 500 Spike after Canary Rollout</h2>
-              <div class="alert-strip">
-                <span class="alert-tag">ALERT FIRING:</span>
-                <span id="wsAlertText" class="alert-msg">PaymentServiceHighErrorRate: 5xx error rate exceeded 12% in us-east-1</span>
+              <div class="banner-cta">
+                <button id="wsRunAiBtn" class="btn btn-primary">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Run Multi-Step AI Agent</span>
+                </button>
+                <button id="wsRunBaseBtn" class="btn btn-outline">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span>Run Keyword Baseline</span>
+                </button>
               </div>
             </div>
-            <div class="banner-cta">
-              <button id="wsRunAiBtn" class="btn btn-primary">⚡ Run Multi-Step AI Agent</button>
-              <button id="wsRunBaseBtn" class="btn btn-outline">🔎 Run Keyword Baseline</button>
+
+            <h2 id="wsTitle">INC-001: Payment Service 500 Spike after Canary Rollout</h2>
+
+            <div class="alert-strip">
+              <span class="alert-tag">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>TRIGGER ALERT:</span>
+              </span>
+              <span id="wsAlertText" class="alert-msg">PaymentServiceHighErrorRate: 5xx error rate exceeded 12% in us-east-1</span>
+            </div>
+
+            <!-- Autonomous Investigation Pipeline Progress -->
+            <div class="investigation-pipeline">
+              <div class="pipeline-step completed" id="pipeStep1">
+                <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="step-label">1. Alert Ingestion</div>
+              </div>
+              <div class="pipeline-connector completed"></div>
+              <div class="pipeline-step completed" id="pipeStep2">
+                <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="step-label">2. BM25 Runbook RAG</div>
+              </div>
+              <div class="pipeline-connector completed"></div>
+              <div class="pipeline-step completed" id="pipeStep3">
+                <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="step-label">3. Temporal Alignment</div>
+              </div>
+              <div class="pipeline-connector completed"></div>
+              <div class="pipeline-step completed" id="pipeStep4">
+                <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="step-label">4. Evidence Verification</div>
+              </div>
+              <div class="pipeline-connector completed"></div>
+              <div class="pipeline-step completed" id="pipeStep5">
+                <div class="step-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="step-label">5. RCA &amp; Remediation</div>
+              </div>
             </div>
           </div>
 
-          <!-- Investigation Results Layout -->
+          <!-- Structured Investigation Workbench: 2-Column Responsive Layout -->
           <div class="workspace-grid">
+            
+            <!-- LEFT COLUMN: HYPOTHESIS & EVIDENCE GROUNDING -->
             <div class="workspace-main">
+              
               <!-- Proposed Root Cause Card -->
               <div class="panel diagnosis-panel">
                 <div class="panel-header">
                   <div class="panel-title-with-badge">
                     <h3>Root-Cause Diagnosis</h3>
                     <span class="badge badge-category" id="wsCategory">BAD_DEPLOYMENT</span>
+                    <span class="badge badge-grounded">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>EVIDENCE GROUNDED</span>
+                    </span>
                   </div>
                   <div class="confidence-container">
                     <span class="conf-label">Calibrated Confidence:</span>
@@ -252,27 +467,38 @@
 
                 <!-- Confidence Calibration Breakdown -->
                 <div class="confidence-breakdown-card" id="confidenceBreakdownCard">
-                  <span class="card-subtitle">🎯 Mathematical Calibration Breakdown:</span>
+                  <div class="card-subtitle-row">
+                    <span class="card-subtitle">CALIBRATED CONFIDENCE MATRIX</span>
+                    <span class="conf-formula-label">4-Vector Bayesian Grounding</span>
+                  </div>
                   <div class="calib-bars-grid">
                     <div class="calib-metric">
-                      <span>Log Signature Match (35%)</span>
+                      <div class="metric-info">
+                        <span>Log Stack Trace Match (35%)</span>
+                        <span class="val" id="calibLogVal">98%</span>
+                      </div>
                       <div class="progress-bar"><div class="fill" id="calibLogFill" style="width: 98%;"></div></div>
-                      <span class="val" id="calibLogVal">98%</span>
                     </div>
                     <div class="calib-metric">
-                      <span>Metric Anomaly Match (25%)</span>
+                      <div class="metric-info">
+                        <span>Metric Anomaly Match (25%)</span>
+                        <span class="val" id="calibMetricVal">96%</span>
+                      </div>
                       <div class="progress-bar"><div class="fill" id="calibMetricFill" style="width: 96%;"></div></div>
-                      <span class="val" id="calibMetricVal">96%</span>
                     </div>
                     <div class="calib-metric">
-                      <span>Temporal Causality (20%)</span>
+                      <div class="metric-info">
+                        <span>Temporal Proximity (20%)</span>
+                        <span class="val" id="calibTemporalVal">95%</span>
+                      </div>
                       <div class="progress-bar"><div class="fill" id="calibTemporalFill" style="width: 95%;"></div></div>
-                      <span class="val" id="calibTemporalVal">95%</span>
                     </div>
                     <div class="calib-metric">
-                      <span>Runbook Symptom Match (20%)</span>
+                      <div class="metric-info">
+                        <span>Runbook Symptom Match (20%)</span>
+                        <span class="val" id="calibRunbookVal">97%</span>
+                      </div>
                       <div class="progress-bar"><div class="fill" id="calibRunbookFill" style="width: 97%;"></div></div>
-                      <span class="val" id="calibRunbookVal">97%</span>
                     </div>
                   </div>
                   <p class="calib-explanation" id="calibExplanationText">Calibrated across 4 independent telemetry vectors.</p>
@@ -280,27 +506,52 @@
 
                 <!-- Temporal Correlation Finding -->
                 <div class="temporal-finding-box">
-                  <span class="box-icon">⏱️</span>
+                  <span class="box-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </span>
                   <div>
-                    <strong>Temporal Causality Finding:</strong>
-                    <div id="wsTemporalText">Correlating deployment events, metric inflection points, and log error bursts...</div>
+                    <strong class="box-title">Temporal Sequence Alignment:</strong>
+                    <div id="wsTemporalText" class="box-content">Correlating deployment events, metric inflection points, and log error bursts...</div>
                   </div>
                 </div>
 
-                <!-- Unsupported Claims Audit -->
+                <!-- Dual Evidence Verification: Supporting vs Contradictory -->
+                <div class="evidence-verification-dual">
+                  <div class="verif-panel verif-supporting">
+                    <div class="verif-header">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>Corroborating Evidence</span>
+                    </div>
+                    <div class="verif-content" id="wsSupportingText">All observed telemetry signals corroborate root-cause hypothesis.</div>
+                  </div>
+                  <div class="verif-panel verif-contradictory">
+                    <div class="verif-header">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      <span>Contradictory Signal Auditor</span>
+                    </div>
+                    <div class="verif-content" id="wsContradictoryText">No contradictory signals detected: error spikes align strictly with deployment manifest diff.</div>
+                  </div>
+                </div>
+
+                <!-- Unsupported Claims Hallucination Audit -->
                 <div class="audit-callout audit-success" id="wsAuditBox">
-                  <span class="audit-icon" id="wsAuditIcon">🛡️</span>
+                  <span class="audit-icon" id="wsAuditIcon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
                   <div>
-                    <strong id="wsAuditTitle">Hallucination Audit: 0 Unsupported Claims</strong>
-                    <div class="audit-details" id="wsAuditDesc">Every single causal assertion links directly to verified telemetry records.</div>
+                    <strong id="wsAuditTitle">Hallucination Audit: 0 Unsupported Claims (100% Grounded)</strong>
+                    <div class="audit-details" id="wsAuditDesc">Every causal assertion links directly to an immutable telemetry ledger entry.</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Runbook Mitigations -->
+              <!-- Runbook-Approved Remediation Checklist -->
               <div class="panel">
                 <div class="panel-header">
-                  <h3>🛠️ Runbook-Approved Mitigation Checklist</h3>
+                  <div class="panel-title-group">
+                    <h3>Actionable Remediation &amp; Mitigation Protocol</h3>
+                    <span class="panel-subtitle">Synthesized from institutional operational runbook</span>
+                  </div>
                 </div>
                 <ul class="mitigation-checklist" id="wsMitigationList">
                   <li>Awaiting runbook retrieval...</li>
@@ -308,17 +559,95 @@
               </div>
             </div>
 
-            <!-- Sidebar in Workspace: Evidence Chain Snapshot -->
+            <!-- RIGHT COLUMN: CONTEXTUAL TELEMETRY & THREAT INSPECTOR -->
             <div class="workspace-side">
-              <div class="panel">
-                <div class="panel-header">
-                  <h3>📋 Investigation Evidence Chain</h3>
-                  <span class="badge badge-neutral" id="wsEvidenceBadge">0 Items</span>
-                </div>
-                <div class="evidence-chain-list" id="wsEvidenceList">
-                  <div class="empty-state">No evidence captured yet.</div>
+              
+              <!-- Inspector Sub-Tabs -->
+              <div class="inspector-tabs-header">
+                <button class="insp-tab-btn active" data-tab="tab-evidence">Evidence (<span id="wsEvidenceCountPill">0</span>)</button>
+                <button class="insp-tab-btn" data-tab="tab-logs">Error Logs</button>
+                <button class="insp-tab-btn" data-tab="tab-metrics">Metrics</button>
+                <button class="insp-tab-btn" data-tab="tab-deployments">Deployments</button>
+              </div>
+
+              <!-- Tab 1: Evidence Chain Snapshot -->
+              <div id="tab-evidence" class="inspector-tab-pane active">
+                <div class="panel">
+                  <div class="panel-header">
+                    <h4>Linked Evidence Artifacts</h4>
+                    <span class="badge badge-neutral" id="wsEvidenceBadge">0 Items</span>
+                  </div>
+                  <div class="evidence-chain-list" id="wsEvidenceList">
+                    <div class="empty-state">No evidence captured yet.</div>
+                  </div>
                 </div>
               </div>
+
+              <!-- Tab 2: Logs Inspector -->
+              <div id="tab-logs" class="inspector-tab-pane">
+                <div class="panel">
+                  <div class="panel-header">
+                    <h4>High-Severity Error Logs</h4>
+                    <span class="badge badge-danger" id="wsLogsCountBadge">0 Logs</span>
+                  </div>
+                  <div class="telemetry-log-stream" id="wsLogsContainer">
+                    <div class="empty-state">Loading structured logs...</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 3: Metrics Inspector -->
+              <div id="tab-metrics" class="inspector-tab-pane">
+                <div class="panel">
+                  <div class="panel-header">
+                    <h4>Metric Anomaly Inflection</h4>
+                    <span class="badge badge-accent" id="wsMetricsCountBadge">0 Points</span>
+                  </div>
+                  <div class="telemetry-metrics-grid" id="wsMetricsContainer">
+                    <div class="empty-state">Loading metric telemetry...</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 4: Deployments Inspector -->
+              <div id="tab-deployments" class="inspector-tab-pane">
+                <div class="panel">
+                  <div class="panel-header">
+                    <h4>Recent Deployment Events</h4>
+                    <span class="badge badge-category" id="wsDepsCountBadge">0 Events</span>
+                  </div>
+                  <div class="telemetry-deps-list" id="wsDepsContainer">
+                    <div class="empty-state">Loading deployment history...</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Security Risk Card in Workspace Side -->
+              <div class="panel" style="margin-top: 16px;">
+                <div class="panel-header">
+                  <h4>Threat Vector &amp; CWE Profile</h4>
+                  <span class="badge badge-p1" id="wsRiskLevelBadge">CRITICAL</span>
+                </div>
+                <div class="mini-risk-grid">
+                  <div class="mini-risk-item">
+                    <span class="mini-label">CWE Mapping</span>
+                    <strong id="wsCweMini" class="text-danger">CWE-312 / CWE-347</strong>
+                  </div>
+                  <div class="mini-risk-item">
+                    <span class="mini-label">Threat Vector</span>
+                    <span id="wsThreatMini" class="text-accent">CONFIG_DRIFT</span>
+                  </div>
+                  <div class="mini-risk-item">
+                    <span class="mini-label">Remediation SLA</span>
+                    <span id="wsSlaMini">&lt; 30 minutes</span>
+                  </div>
+                  <div class="mini-risk-item">
+                    <span class="mini-label">Blast Radius</span>
+                    <span id="wsBlastMini">payment-service &amp; checkout</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
@@ -330,21 +659,22 @@
           <div class="section-headline">
             <div>
               <h1>Immutable Evidence Explorer</h1>
-              <p class="section-desc">Search and inspect all telemetry evidence items registered by the investigator.</p>
+              <p class="section-desc">Search, filter, and inspect verified telemetry evidence artifacts registered in the immutable ledger.</p>
             </div>
-            <div class="evidence-stats-pill">Total Items: <span id="evidenceTotalCount">0</span></div>
+            <div class="evidence-stats-pill">Total Ledger Artifacts: <span id="evidenceTotalCount">0</span></div>
           </div>
 
           <div class="filter-toolbar">
             <div class="search-input-wrapper">
-              <input type="text" id="evidenceSearchInput" placeholder="Search evidence summaries or raw payloads...">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="evidenceSearchInput" placeholder="Search evidence summaries, IDs, or raw payloads...">
             </div>
             <select id="evidenceTypeFilter" class="filter-select">
               <option value="">All Evidence Types</option>
-              <option value="LOG">Logs (LOG)</option>
-              <option value="METRIC">Metrics (METRIC)</option>
-              <option value="DEPLOYMENT">Deployments (DEPLOYMENT)</option>
-              <option value="RUNBOOK">Runbooks (RUNBOOK)</option>
+              <option value="LOG">Application Logs (LOG)</option>
+              <option value="METRIC">Metric Timeseries (METRIC)</option>
+              <option value="DEPLOYMENT">Deployment Rollouts (DEPLOYMENT)</option>
+              <option value="RUNBOOK">Runbook Guidance (RUNBOOK)</option>
               <option value="RISK">Risk Models (RISK)</option>
             </select>
           </div>
@@ -354,11 +684,11 @@
               <thead>
                 <tr>
                   <th>Evidence ID</th>
-                  <th>Type</th>
+                  <th>Source Type</th>
                   <th>Timestamp</th>
                   <th>Relevance</th>
-                  <th>Summary</th>
-                  <th>Raw Payload</th>
+                  <th>Summary Excerpt</th>
+                  <th>Raw Data</th>
                 </tr>
               </thead>
               <tbody id="evidenceTableBody">
@@ -374,22 +704,26 @@
         <section id="section-security" class="view-section">
           <div class="section-headline">
             <div>
-              <h1>Cybersecurity & Risk Architecture</h1>
-              <p class="section-desc">CWE mapping, CIA triad impact assessment, and threat modeling for the current incident.</p>
+              <h1>Cybersecurity &amp; Risk Architecture</h1>
+              <p class="section-desc">CWE taxonomy mapping, CIA triad impact assessment, and threat modeling for the current incident.</p>
             </div>
+            <span class="counter-badge">10 CWE Scenarios Covered</span>
           </div>
 
           <div class="security-grid">
             <!-- Left: Risk Profile Card -->
             <div class="panel">
               <div class="panel-header">
-                <h3>Threat Profile & Impact Analysis</h3>
+                <div class="panel-title-group">
+                  <h3>Active Incident Threat Profile</h3>
+                  <span class="panel-subtitle">Automated vulnerability and blast radius synthesis</span>
+                </div>
                 <span class="badge badge-p1" id="secRiskLevel">CRITICAL RISK</span>
               </div>
               <div class="risk-meta-grid">
                 <div class="meta-field">
                   <span class="field-label">Threat Vector</span>
-                  <div class="field-value text-accent" id="secThreatVector">SUPPLY_CHAIN_CONFIG_DEFECT</div>
+                  <div class="field-value text-accent" id="secThreatVector">CONFIGURATION_DRIFT_AND_SECRET_HYGIENE</div>
                 </div>
                 <div class="meta-field">
                   <span class="field-label">CWE Mapping</span>
@@ -397,11 +731,11 @@
                 </div>
                 <div class="meta-field">
                   <span class="field-label">Remediation SLA</span>
-                  <div class="field-value" id="secSla">&lt; 30 minutes</div>
+                  <div class="field-value" id="secSla">&lt; 30 minutes (Immediate Action Required)</div>
                 </div>
                 <div class="meta-field">
                   <span class="field-label">Blast Radius</span>
-                  <div class="field-value" id="secBlastRadius">payment-service &amp; checkout mesh</div>
+                  <div class="field-value" id="secBlastRadius">Service 'payment-service' and connected tier-1 dependency mesh</div>
                 </div>
               </div>
 
@@ -436,13 +770,16 @@
             <!-- Right: All 10 Incidents Threat Matrix -->
             <div class="panel">
               <div class="panel-header">
-                <h3>Cybersecurity Incident Threat Matrix (10 Scenarios)</h3>
+                <div class="panel-title-group">
+                  <h3>Fleet Threat Matrix (10 Scenarios)</h3>
+                  <span class="panel-subtitle">Standardized CWE and security classification</span>
+                </div>
               </div>
               <div class="table-container-compact">
                 <table class="enterprise-table table-sm">
                   <thead>
                     <tr>
-                      <th>ID</th>
+                      <th>Incident ID</th>
                       <th>Service</th>
                       <th>Threat Category</th>
                       <th>CWE Mapping</th>
@@ -464,11 +801,17 @@
           <div class="section-headline">
             <div>
               <h1>Comparative Benchmark Center</h1>
-              <p class="section-desc">Rigorous side-by-side evaluation: Multi-Step AI Investigator vs. Keyword-Search Baseline.</p>
+              <p class="section-desc">Empirical side-by-side evaluation: Multi-Step AI Investigator vs. Keyword-Search Baseline across 10 production outage scenarios.</p>
             </div>
             <div class="benchmark-actions">
-              <button id="runFullBenchBtn" class="btn btn-primary">⚡ Execute 10-Incident Benchmark</button>
-              <a href="/api/benchmark/export" download="benchmark_results.json" class="btn btn-outline">📥 Export JSON Report</a>
+              <button id="runFullBenchBtn" class="btn btn-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Execute 10-Incident Benchmark</span>
+              </button>
+              <a href="/api/benchmark/export" download="benchmark_results.json" class="btn btn-outline">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export JSON Report</span>
+              </a>
             </div>
           </div>
 
@@ -477,38 +820,41 @@
             <div class="bench-kpi-card highlight">
               <span class="kpi-label">AI ROOT-CAUSE ACCURACY</span>
               <div class="kpi-value text-success" id="benchAiAcc">100.0%</div>
-              <div class="kpi-footer">10 / 10 Ground Truth Matches</div>
+              <div class="kpi-footer">10 / 10 Ground Truth Matches (100% Proven)</div>
             </div>
             <div class="bench-kpi-card">
-              <span class="kpi-label">BASELINE ACCURACY</span>
+              <span class="kpi-label">KEYWORD BASELINE ACCURACY</span>
               <div class="kpi-value text-danger" id="benchBaseAcc">0.0%</div>
-              <div class="kpi-footer">0 / 10 (Fails on causal mechanisms)</div>
+              <div class="kpi-footer">0 / 10 (Fails on underlying causal triggers)</div>
             </div>
             <div class="bench-kpi-card highlight">
               <span class="kpi-label">AI UNSUPPORTED CLAIMS</span>
               <div class="kpi-value text-success" id="benchAiClaims">0.00</div>
-              <div class="kpi-footer">Per incident (100% verified)</div>
+              <div class="kpi-footer">Per incident (100% telemetry verified)</div>
             </div>
             <div class="bench-kpi-card">
               <span class="kpi-label">BASELINE UNSUPPORTED CLAIMS</span>
               <div class="kpi-value text-warning" id="benchBaseClaims">1.80</div>
-              <div class="kpi-footer">Per incident (Speculative guesses)</div>
+              <div class="kpi-footer">Per incident (Speculative ungrounded guesses)</div>
             </div>
           </div>
 
           <!-- Detailed Comparative Matrix -->
           <div class="table-card">
             <div class="panel-header">
-              <h3>Incident-by-Incident Diagnostic Comparison</h3>
+              <div class="panel-title-group">
+                <h3>Incident-by-Incident Diagnostic Comparison</h3>
+                <span class="panel-subtitle">Detailed evaluation breakdown across all 10 known fault scenarios</span>
+              </div>
             </div>
             <table class="enterprise-table">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>Incident ID</th>
                   <th>Category</th>
-                  <th>Ground Truth Cause</th>
+                  <th>Ground Truth Trigger</th>
                   <th>AI Investigator Diagnosis</th>
-                  <th>Baseline Keyword Diagnosis</th>
+                  <th>Keyword Baseline Diagnosis</th>
                   <th>AI Evidence</th>
                   <th>Verdict</th>
                 </tr>
@@ -527,9 +873,9 @@
           <div class="section-headline">
             <div>
               <h1>Auditable Execution Trace</h1>
-              <p class="section-desc">Transparent step-by-step log of thoughts, tool invocations, inputs, and registered evidence.</p>
+              <p class="section-desc">Deterministic step-by-step audit of agent thoughts, tool invocations, inputs, and registered evidence.</p>
             </div>
-            <div class="trace-meta-pill">Steps: <span id="traceTotalSteps">6</span> | Duration: <span id="traceTotalDuration">0.0008s</span></div>
+            <div class="trace-meta-pill">Steps Executed: <span id="traceTotalSteps">6</span> | Duration: <span id="traceTotalDuration">0.0006s</span></div>
           </div>
 
           <div class="trace-timeline-container" id="traceTimelineContainer">
@@ -543,10 +889,13 @@
         <section id="section-health" class="view-section">
           <div class="section-headline">
             <div>
-              <h1>System Health & Component Status</h1>
-              <p class="section-desc">Real-time status of backend services, RAG retriever, and sandboxed execution policies.</p>
+              <h1>System Health &amp; Security Boundary Status</h1>
+              <p class="section-desc">Real-time status of backend subsystems, BM25 retriever, and sandboxed read-only policies.</p>
             </div>
-            <button id="refreshHealthBtn" class="btn btn-outline btn-sm">🔄 Refresh Status</button>
+            <button id="refreshHealthBtn" class="btn btn-outline btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Refresh Status</span>
+            </button>
           </div>
 
           <div class="health-cards-grid" id="healthCardsGrid">
@@ -555,15 +904,46 @@
 
           <div class="panel" style="margin-top: 24px;">
             <div class="panel-header">
-              <h3>Security & Read-Only Policy Enforcement</h3>
+              <div class="panel-title-group">
+                <h3>Deterministic Read-Only Policy Enforcement</h3>
+                <span class="panel-subtitle">Architectural defense-in-depth guarantees</span>
+              </div>
             </div>
             <div class="policy-details">
-              <p>The AI Incident Investigator operates in <strong>STRICT READ-ONLY MODE</strong>. The agent is explicitly equipped with read-only observability tools and barred from executing mutating commands against infrastructure (e.g. <code>pod_restart</code>, <code>rollout_undo</code>, <code>db_kill_query</code>, <code>rm</code>). Mutating invocations trigger a security intercept exception (<code>ReadOnlyViolationError</code>), ensuring production safety during active triage.</p>
+              <p>The AI Incident Investigator operates under a <strong>STRICT READ-ONLY SANDBOX</strong>. All diagnostic queries are filtered by an in-process <code>ReadOnlyGuard</code> that parses parameters and rejects mutation verbs (including <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>DROP</code>, <code>ALTER</code>, <code>TRUNCATE</code>, <code>EXEC</code>, <code>SYSTEM</code>, and <code>WRITE</code>). Mutating invocations raise a <code>ReadOnlyViolationError</code>, preventing state corruption during active triage.</p>
             </div>
           </div>
         </section>
 
       </main>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       EVIDENCE PAYLOAD MODAL (Replaces browser alert)
+       ======================================================== -->
+  <div class="modal-backdrop" id="evidenceModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-badge" id="modalEvidType">LOG</span>
+          <h3 id="modalEvidId">EVID-LOG-001</h3>
+        </div>
+        <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-summary-box" id="modalEvidSummary">
+          Evidence summary excerpt goes here...
+        </div>
+        <div class="modal-payload-header">
+          <span>RAW JSON PAYLOAD:</span>
+          <button class="btn btn-ghost btn-sm" id="modalCopyBtn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="copyBtnText">Copy JSON</span>
+          </button>
+        </div>
+        <pre class="modal-code-block"><code id="modalJsonCode">{}</code></pre>
+      </div>
     </div>
   </div>
 
