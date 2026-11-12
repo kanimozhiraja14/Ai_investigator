@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Incident Investigator - SRE Command Center</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="logo-icon">🔍</div>
+        <div>
+          <h1>AI Incident Investigator</h1>
+          <p class="subtitle">Autonomous Outage Root-Cause Analysis with Telemetry & Evidence Tracking</p>
+        </div>
+      </div>
+      <div class="nav-badges">
+        <span class="badge badge-lock">🔒 READ-ONLY MODE</span>
+        <span class="badge badge-status">● 10 INCIDENTS LOADED</span>
+        <button id="runBenchmarkBtn" class="btn btn-secondary">⚡ Run 10-Incident Benchmark</button>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main class="main-content">
+      <!-- Left Sidebar: Incidents List -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Injected Outages</h2>
+          <span class="count-badge" id="incidentCount">10</span>
+        </div>
+        <div class="incident-list" id="incidentList">
+          <!-- Populated dynamically -->
+        </div>
+      </aside>
+
+      <!-- Center / Right: Investigation Workspace -->
+      <section class="workspace">
+        <!-- Incident Banner -->
+        <div class="card incident-banner" id="incidentBanner">
+          <div class="banner-top">
+            <div class="service-meta">
+              <span class="badge badge-p1" id="bannerSeverity">P1</span>
+              <span class="service-pill" id="bannerService">payment-service</span>
+              <span class="time-stamp" id="bannerTime">2026-11-12T14:02:00Z</span>
+            </div>
+            <div class="action-buttons">
+              <button id="investigateAiBtn" class="btn btn-primary">⚡ Investigate with AI Agent</button>
+              <button id="investigateBaseBtn" class="btn btn-outline">🔎 Keyword Search Baseline</button>
+            </div>
+          </div>
+          <h2 id="bannerTitle" class="banner-title">Loading incident...</h2>
+          <div class="alert-box">
+            <span class="alert-label">INITIAL ALERT:</span>
+            <span id="bannerAlert" class="alert-text">...</span>
+          </div>
+        </div>
+
+        <!-- Investigation Results View -->
+        <div class="results-grid" id="resultsGrid">
+          <!-- Left Column: Root Cause & Mitigations -->
+          <div class="results-col-main">
+            <!-- Root Cause Card -->
+            <div class="card diagnosis-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <span class="indicator-dot"></span>
+                  <h3>Proposed Root Cause Diagnosis</h3>
+                </div>
+                <div class="meta-tags">
+                  <span class="badge badge-category" id="diagCategory">BAD_DEPLOYMENT</span>
+                  <span class="confidence-pill" id="diagConfidence">98% Confidence</span>
+                </div>
+              </div>
+              <p id="diagText" class="diagnosis-text">Click "Investigate with AI Agent" to run the investigation.</p>
+              
+              <div class="causality-box">
+                <span class="box-title">⏱️ Temporal Correlation Finding:</span>
+                <p id="causalityText">Deployments, metric spikes, and log error timestamps correlation analysis.</p>
+              </div>
+
+              <!-- Unsupported Claims Audit -->
+              <div class="audit-box" id="auditBox">
+                <div class="audit-header">
+                  <span id="auditIcon">🛡️</span>
+                  <span class="audit-title" id="auditTitle">Evidence Verification Audit: 0 Unsupported Claims</span>
+                </div>
+                <p class="audit-desc" id="auditDesc">Every proposed causal claim is linked to verified log lines, metrics, or deployment artifacts.</p>
+              </div>
+
+              <!-- Cybersecurity Risk & Threat Analysis -->
+              <div class="risk-card" id="riskCard" style="margin-top: 16px; background-color: #0d1527; border: 1px solid #1e2e4a; border-radius: 6px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-weight: 700; color: #f43f5e; font-size: 13px;">🛡️ CYBERSECURITY THREAT & RISK ASSESSMENT</span>
+                  <span class="badge badge-p1" id="riskLevelBadge">CRITICAL RISK</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; margin-bottom: 8px;">
+                  <div><strong style="color: #94a3b8;">Threat Vector:</strong> <span id="riskVector" style="color: #cbd5e1;">-</span></div>
+                  <div><strong style="color: #94a3b8;">CWE Mapping:</strong> <span id="riskCwe" style="color: #fca5a5;">-</span></div>
+                  <div><strong style="color: #94a3b8;">Remediation SLA:</strong> <span id="riskSla" style="color: #cbd5e1;">-</span></div>
+                  <div><strong style="color: #94a3b8;">CIA Impact:</strong> <span id="riskCia" style="color: #cbd5e1;">-</span></div>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; font-style: italic;" id="riskAdvisory">Awaiting risk assessment...</div>
+              </div>
+            </div>
+
+            <!-- Investigation Execution Trace -->
+            <div class="card trace-card">
+              <div class="card-header">
+                <h3>🔍 Step-by-Step Investigation Trace</h3>
+                <span class="badge badge-neutral" id="traceStepCount">0 Steps</span>
+              </div>
+              <div class="trace-steps" id="traceStepsContainer">
+                <div class="empty-state">No trace generated yet. Run an investigation to view execution steps.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Evidence Chain & Mitigations -->
+          <div class="results-col-side">
+            <!-- Mitigation Plan -->
+            <div class="card mitigation-card">
+              <div class="card-header">
+                <h3>🛠️ Runbook Mitigation Checklist</h3>
+              </div>
+              <ul class="mitigation-list" id="mitigationList">
+                <li>Awaiting runbook retrieval...</li>
+              </ul>
+            </div>
+
+            <!-- Evidence Chain -->
+            <div class="card evidence-card">
+              <div class="card-header">
+                <h3>📋 Linked Evidence Items</h3>
+                <span class="badge badge-count" id="evidenceCountBadge">0</span>
+              </div>
+              <div class="evidence-list" id="evidenceListContainer">
+                <div class="empty-state">No evidence items registered yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Benchmark Proof Section (Hidden by default, shown when benchmark clicked) -->
+        <div class="card benchmark-card" id="benchmarkCard" style="display: none;">
+          <div class="card-header">
+            <div>
+              <h2>📊 Evaluation Proof: AI Investigator vs Keyword-Search Baseline</h2>
+              <p class="subtitle">Benchmarked across all 10 injected production outages</p>
+            </div>
+            <button id="closeBenchmarkBtn" class="btn btn-sm btn-outline">✕ Close Proof</button>
+          </div>
+
+          <!-- Benchmark Metrics Summary Cards -->
+          <div class="benchmark-stats">
+            <div class="stat-box highlight">
+              <div class="stat-label">AI Root-Cause Accuracy</div>
+              <div class="stat-val text-success" id="benchAiAccuracy">100%</div>
+              <div class="stat-sub">10 / 10 Incidents Correct</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Baseline Accuracy</div>
+              <div class="stat-val text-danger" id="benchBaseAccuracy">0%</div>
+              <div class="stat-sub">0 / 10 Incidents Correct</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">AI Unsupported Claims</div>
+              <div class="stat-val text-success" id="benchAiClaims">0.0</div>
+              <div class="stat-sub">Per incident (100% verified)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Baseline Unsupported Claims</div>
+              <div class="stat-val text-warning" id="benchBaseClaims">1.4</div>
+              <div class="stat-sub">Hallucinated / Speculative</div>
+            </div>
+          </div>
+
+          <!-- Comparison Table -->
+          <div class="table-container">
+            <table class="benchmark-table">
+              <thead>
+                <tr>
+                  <th>Incident</th>
+                  <th>Service</th>
+                  <th>Ground Truth Cause</th>
+                  <th>AI Investigator Diagnosis</th>
+                  <th>Baseline Keyword Diagnosis</th>
+                  <th>AI Evidence</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="benchmarkTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
