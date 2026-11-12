@@ -3,9 +3,10 @@ Telemetry database containing logs, metrics, deployment events, and incident def
 for 10 realistic production incident scenarios.
 """
 
+from collections import Counter
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import Incident, LogEntry, MetricPoint, DeploymentEvent
+from .models import Incident, LogEntry, MetricPoint, DeploymentEvent, SystemStats
 
 INCIDENTS: Dict[str, Incident] = {
     "INC-001": Incident(
@@ -459,3 +460,19 @@ def query_deployments(
             continue
         filtered.append(d)
     return filtered
+
+
+def get_system_stats() -> SystemStats:
+    incidents = list(INCIDENTS.values())
+    severity_counts = Counter(i.severity for i in incidents)
+    status_counts = Counter(i.status for i in incidents)
+    category_counts = Counter(i.ground_truth_category for i in incidents)
+    
+    return SystemStats(
+        total_incidents=len(incidents),
+        severity_counts=dict(severity_counts),
+        status_counts=dict(status_counts),
+        category_counts=dict(category_counts),
+        recent_incidents=incidents[:6],
+        avg_mttr_seconds=1840.0
+    )

@@ -62,11 +62,13 @@ class Incident(BaseModel):
     end_time: str
     initial_alert: str
     severity: str  # P1, P2, P3
+    status: str = "OPEN"  # OPEN, INVESTIGATING, RESOLVED
     ground_truth_cause: str
     ground_truth_category: str
     threat_category: Optional[str] = None
     cwe_id: Optional[str] = None
     key_signals: List[str]
+    impact_summary: Optional[str] = None
 
 
 class RiskAnalysis(BaseModel):
@@ -99,6 +101,15 @@ class InvestigationStep(BaseModel):
     timestamp: str
 
 
+class ConfidenceBreakdown(BaseModel):
+    overall_score: float
+    log_signal_weight: float
+    metric_anomaly_weight: float
+    temporal_proximity_weight: float
+    runbook_alignment_weight: float
+    explanation: str
+
+
 class InvestigationResult(BaseModel):
     incident_id: str
     incident_title: str
@@ -106,6 +117,7 @@ class InvestigationResult(BaseModel):
     root_cause_diagnosis: str
     category: str
     confidence_score: float  # 0.0 to 1.0
+    confidence_breakdown: Optional[ConfidenceBreakdown] = None
     evidence_chain: List[EvidenceItem]
     unsupported_claims: List[str]
     steps_count: int
@@ -142,3 +154,27 @@ class BenchmarkReport(BaseModel):
     investigator_unsupported_rate: float
     baseline_unsupported_rate: float
     comparisons: List[BenchmarkComparison]
+
+
+class ComponentHealth(BaseModel):
+    status: str  # OPERATIONAL, DEGRADED, DOWN
+    details: str
+    latency_ms: Optional[float] = None
+
+
+class SystemHealthStatus(BaseModel):
+    status: str  # HEALTHY, DEGRADED
+    version: str = "2.0.0"
+    uptime_seconds: float
+    components: Dict[str, ComponentHealth]
+    read_only_mode: bool = True
+    total_incidents_monitored: int
+
+
+class SystemStats(BaseModel):
+    total_incidents: int
+    severity_counts: Dict[str, int]
+    status_counts: Dict[str, int]
+    category_counts: Dict[str, int]
+    recent_incidents: List[Incident]
+    avg_mttr_seconds: float
