@@ -58,7 +58,7 @@ class KeywordSearchBaseline:
                 source_id=l.id,
                 timestamp=l.timestamp,
                 summary=l.message[:100],
-                raw_data=l.dict(),
+                raw_data=l.model_dump(),
                 relevance="MEDIUM"
             )
             for l in matched_logs[:3]
@@ -180,3 +180,4 @@ class KeywordSearchBaseline:
 
 
 baseline = KeywordSearchBaseline()
+KeywordBaselineInvestigator = KeywordSearchBaseline

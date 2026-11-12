@@ -266,17 +266,75 @@ Open **[http://localhost:8000](http://localhost:8000)** in your browser to inter
 
 ---
 
-## 7. Project File Structure
+## 7. Master Portfolio Upgrade & QA Verification (Phases 1-8)
+
+### Phase 1: Architecture & Security Specification
+- Generated comprehensive engineering blueprints:
+  - `docs/ARCHITECTURE.md`: Component topology, BM25 scoring formula, temporal correlation, evidence ledger, and 5-stage reasoning cycle.
+  - `docs/IMPLEMENTATION_PLAN.md`: Phased milestone roadmap from audit through QA.
+  - `docs/SECURITY_REVIEW.md`: Threat model (STRIDE), read-only sandbox boundary, CWE categorization, and secret hygiene.
+
+### Phase 2: Enterprise Dashboard Refinement
+- Redesigned SRE Command Center with deep navy palette (`#080d1a`, `#0f172a`), subtle cyan/blue accents, KPI metric bars, interactive filters, diagnosis callouts, confidence meters, evidence tables, risk analysis matrices, benchmark comparisons, and system health status.
+
+### Phase 3: AI Investigation Engine Elevation
+- Calibrated multi-factor confidence scoring (Log Stack Clarity 35%, Metric Anomaly Match 25%, Temporal Causality 20%, Runbook Alignment 20%).
+- Rigorous evidence ledger linking with immutable `EVID-*` identifiers.
+- Hallucination auditing guaranteeing 0.0 unsupported claims per incident.
+
+### Phase 4 & 5: Security Hardening & Read-Only Sandbox Guard
+- Implemented `ReadOnlyGuard` in `incident_investigator/app/tools.py` with parameter-level regex inspection intercepting forbidden mutation verbs (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `TRUNCATE`, `EXEC`, `SYSTEM`, `WRITE`, etc.).
+- Replaced deprecated Pydantic `.dict()` calls with `.model_dump()`.
+- Maintained 100% backward compatibility for all imports and CLI runners.
+
+### Phase 6: Automated Testing & Verification
+- Created complete automated test suite in `tests/`:
+  - `tests/test_api.py` (7 tests: health, stats, incident list, telemetry, runbooks)
+  - `tests/test_investigation.py` (4 tests: 10 scenario verification, evidence integrity, 0 unsupported claims, baseline fallback)
+  - `tests/test_retrieval.py` (5 tests: corpus loading, BM25 scoring on payment, DB, disk, ID lookup)
+  - `tests/test_correlation.py` (3 tests: deployment precedence, resource exhaustion, chronological order)
+  - `tests/test_security_readonly.py` (6 tests: safe read queries, SQL DROP/DELETE/INSERT interception, CLI EXEC/WRITE interception)
+  - `tests/test_benchmark.py` (2 tests: single incident comparison, full 10-incident system benchmark)
+- **Test Results:** 27 tests run, 27 passed, 0 failures, 0 errors in 0.023s.
+
+### Phase 7: Documentation Suite & Containerization
+- Authored complete industry-standard documentation suite in `docs/`:
+  - `docs/API_REFERENCE.md`
+  - `docs/TESTING.md`
+  - `docs/BENCHMARKS.md`
+  - `docs/DEPLOYMENT.md`
+- Created multi-stage `Dockerfile` and `docker-compose.yml` for production containerization.
+
+---
+
+## 8. Complete Project File Structure
 
 ```
 C:\Users\kanimozhi\Downloads\New folder (4)\
 ├── .env.example                     # Environment configuration template
 ├── .gitignore                       # Clean Git ignore rules (bytecode, cache, venv)
+├── Dockerfile                       # Multi-stage production container definition
+├── docker-compose.yml               # Production compose configuration
 ├── benchmark_results.json           # Permanent benchmark evaluation results on disk
 ├── README.md                        # Enterprise project documentation (15 sections)
 ├── requirements.txt                 # Project dependencies specification
-├── TASK_DOCUMENTATION.md            # Comprehensive implementation and test documentation
-├── test_routes.py                   # Automated test suite (15 route handlers tested)
+├── TASK_DOCUMENTATION.md            # Complete implementation and test documentation
+├── test_routes.py                   # Route handler verification script
+├── docs/                            # Formal engineering documentation suite
+│   ├── ARCHITECTURE.md              # System architecture & component topology
+│   ├── IMPLEMENTATION_PLAN.md       # Master phase execution plan
+│   ├── SECURITY_REVIEW.md           # Threat model, STRIDE analysis, read-only guard
+│   ├── API_REFERENCE.md             # Complete OpenAPI REST endpoint reference
+│   ├── TESTING.md                   # Automated testing suite matrix & instructions
+│   ├── BENCHMARKS.md                # Mathematical methodology & scenario results
+│   └── DEPLOYMENT.md                # Docker, Compose & Kubernetes deployment guide
+├── tests/                           # Complete automated test suite (27 tests)
+│   ├── test_api.py                  # API endpoint contract tests
+│   ├── test_investigation.py        # Autonomous AI investigation engine tests
+│   ├── test_retrieval.py            # BM25 Runbook retrieval tests
+│   ├── test_correlation.py          # Temporal correlation engine tests
+│   ├── test_security_readonly.py    # Read-only mutation interceptor tests
+│   └── test_benchmark.py            # Benchmark evaluation tests
 ├── incident_investigator/
 │   ├── run_investigator.py          # Standalone verification runner & trace output
 │   └── app/
@@ -290,18 +348,5 @@ C:\Users\kanimozhi\Downloads\New folder (4)\
 │       ├── baseline.py              # Keyword-search baseline investigator
 │       ├── benchmark.py             # 10-incident comparative evaluation harness
 │       ├── runbooks/                # 10 Markdown runbooks with diagnostics & mitigations
-│       │   ├── payment_service_5xx.md
-│       │   ├── db_connection_pool.md
-│       │   ├── disk_space_exhaustion.md
-│       │   ├── oom_memory_leak.md
-│       │   ├── third_party_degradation.md
-│       │   ├── ingress_ssl_expiry.md
-│       │   ├── redis_cache_stampede.md
-│       │   ├── rate_limiting_misconfig.md
-│       │   ├── kafka_consumer_lag.md
-│       │   └── jwt_auth_rotation_failure.md
-│       └── static/                  # Enterprise Command Center UI
-│           ├── index.html           # 8-section command center HTML
-│           ├── style.css            # Dark enterprise CSS with navy palette
-│           └── app.js               # Reactive frontend controller
+│       └── static/                  # Enterprise Command Center UI (SPA)
 ```

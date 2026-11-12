@@ -1,7 +1,8 @@
 """
-Read-only investigation tools with evidence registration and mutation blocking.
+Read-only investigation tools with evidence registration, security guard, and mutation blocking.
 """
 
+import re
 from typing import Dict, Any, List, Optional
 from .models import EvidenceItem, LogEntry, MetricPoint, DeploymentEvent, RiskAnalysis
 from .telemetry import query_logs, query_metrics, query_deployments, get_incident
@@ -10,8 +11,28 @@ from .correlation_engine import correlator
 
 
 class ReadOnlyViolationError(Exception):
-    """Raised when an agent attempts a mutating operation in read-only mode."""
+    """Raised when an agent attempts a mutating operation or passes mutation verbs in read-only mode."""
     pass
+
+
+FORBIDDEN_MUTATION_REGEX = re.compile(
+    r"\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|REPLACE|"
+    r"EXEC|SYSTEM|SHUTDOWN|KILL|REBOOT|WRITE|RM|DEL|POST|PUT|PATCH)\b",
+    re.IGNORECASE
+)
+
+
+def _validate_read_only_args(**kwargs):
+    """
+    Inspects all input parameters for SQL/system/API mutation verbs.
+    Throws ReadOnlyViolationError if any write or destructive action is detected.
+    """
+    for key, val in kwargs.items():
+        if isinstance(val, str) and FORBIDDEN_MUTATION_REGEX.search(val):
+            raise ReadOnlyViolationError(
+                f"STRICT READ-ONLY VIOLATION: Parameter '{key}' contains prohibited mutation command '{val}'. "
+                "Investigation tools are strictly prohibited from mutating or deleting system state."
+            )
 
 
 class InvestigationToolRegistry:
@@ -41,6 +62,7 @@ class InvestigationToolRegistry:
 
     def query_logs_tool(self, incident_id: str, service: Optional[str] = None, level: Optional[str] = None, search: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
         """Query structured logs and capture discovered records as verified evidence."""
+        _validate_read_only_args(incident_id=incident_id, service=service, level=level, search=search)
         logs = query_logs(incident_id, service=service, level=level, search=search, limit=limit)
         captured_ids = []
         for log in logs:
@@ -48,7 +70,7 @@ class InvestigationToolRegistry:
                 source_type="LOG",
                 source_id=log.id,
                 summary=f"[{log.level}] {log.service} at {log.timestamp}: {log.message[:140]}",
-                raw_data=log.dict(),
+                raw_data=log.model_dump(),
                 timestamp=log.timestamp,
                 relevance="HIGH" if log.level in ["ERROR", "FATAL"] else "MEDIUM"
             )
@@ -56,21 +78,22 @@ class InvestigationToolRegistry:
 
         return {
             "status": "SUCCESS",
-            "count": len(logs),
-            "logs": [l.dict() for l in logs],
+            "total_found": len(logs),
+            "logs": [l.model_dump() for l in logs],
             "evidence_registered": captured_ids
         }
 
     def query_metrics_tool(self, incident_id: str, service: Optional[str] = None, metric_name: Optional[str] = None) -> Dict[str, Any]:
-        """Query time-series metrics and register anomalies as evidence."""
+        """Query metric timeseries to identify saturation, error rate spikes, or latency anomalies."""
+        _validate_read_only_args(incident_id=incident_id, service=service, metric_name=metric_name)
         metrics = query_metrics(incident_id, service=service, metric_name=metric_name)
         captured_ids = []
         for m in metrics:
             evid_id = self.register_evidence(
                 source_type="METRIC",
-                source_id=f"{m.metric_name}-{m.timestamp}",
-                summary=f"{m.service} metric {m.metric_name} = {m.value} {m.unit} at {m.timestamp}",
-                raw_data=m.dict(),
+                source_id=f"{m.service}_{m.metric_name}",
+                summary=f"Metric {m.metric_name} for {m.service} recorded {m.value}{m.unit} at {m.timestamp}",
+                raw_data=m.model_dump(),
                 timestamp=m.timestamp,
                 relevance="HIGH"
             )
@@ -78,21 +101,22 @@ class InvestigationToolRegistry:
 
         return {
             "status": "SUCCESS",
-            "count": len(metrics),
-            "metrics": [m.dict() for m in metrics],
+            "total_points": len(metrics),
+            "metrics": [m.model_dump() for m in metrics],
             "evidence_registered": captured_ids
         }
 
     def get_deployments_tool(self, incident_id: str, service: Optional[str] = None) -> Dict[str, Any]:
-        """Query deployment history and commit diffs within the incident window."""
+        """Query deployment history to determine if a software release or configuration change triggered the incident."""
+        _validate_read_only_args(incident_id=incident_id, service=service)
         deployments = query_deployments(incident_id, service=service)
         captured_ids = []
         for dep in deployments:
             evid_id = self.register_evidence(
                 source_type="DEPLOYMENT",
                 source_id=dep.id,
-                summary=f"Deployment {dep.id} ({dep.service}:{dep.version}) by {dep.author} at {dep.timestamp} - commit {dep.commit_hash}",
-                raw_data=dep.dict(),
+                summary=f"Deployment of {dep.service} ({dep.version}) by {dep.author} with commit {dep.commit_hash[:8]}",
+                raw_data=dep.model_dump(),
                 timestamp=dep.timestamp,
                 relevance="HIGH"
             )
@@ -100,21 +124,21 @@ class InvestigationToolRegistry:
 
         return {
             "status": "SUCCESS",
-            "count": len(deployments),
-            "deployments": [d.dict() for d in deployments],
+            "deployments": [d.model_dump() for d in deployments],
             "evidence_registered": captured_ids
         }
 
     def search_runbooks_tool(self, query: str, service: Optional[str] = None) -> Dict[str, Any]:
-        """Retrieve relevant runbooks using BM25 ranking based on symptoms and service."""
-        matches = retriever.search(query, service=service, top_k=3)
+        """Search runbook knowledge base using BM25 relevance scoring."""
+        _validate_read_only_args(query=query, service=service)
+        matches = retriever.search(query=query, service=service)
         captured_ids = []
-        for m in matches:
+        for match in matches[:2]:
             evid_id = self.register_evidence(
                 source_type="RUNBOOK",
-                source_id=m["runbook_id"],
-                summary=f"Runbook '{m['title']}' for {m['service']} (score={m['score']})",
-                raw_data=m,
+                source_id=match["runbook_id"],
+                summary=f"Matched runbook '{match['title']}' for {match['service']} (BM25 score: {match['score']:.2f})",
+                raw_data=match,
                 relevance="HIGH"
             )
             captured_ids.append(evid_id)
@@ -126,26 +150,20 @@ class InvestigationToolRegistry:
         }
 
     def get_runbook_detail_tool(self, runbook_id: str) -> Dict[str, Any]:
-        """Fetch full markdown content and checklist of a specific runbook."""
+        """Retrieve full structured runbook markdown, symptoms, and mitigation steps."""
+        _validate_read_only_args(runbook_id=runbook_id)
         rb = retriever.get_runbook(runbook_id)
         if not rb:
             return {"status": "ERROR", "message": f"Runbook {runbook_id} not found"}
-
-        evid_id = self.register_evidence(
-            source_type="RUNBOOK",
-            source_id=rb.id,
-            summary=f"Full runbook guidance for {rb.title}",
-            raw_data={"symptoms": rb.symptoms, "diagnostic_steps": rb.diagnostic_steps, "mitigation": rb.mitigation_steps},
-            relevance="HIGH"
-        )
+        
         return {
             "status": "SUCCESS",
-            "runbook": rb.dict(),
-            "evidence_registered": [evid_id]
+            "runbook": rb.model_dump()
         }
 
     def correlate_signals_tool(self, incident_id: str) -> Dict[str, Any]:
-        """Perform cross-telemetry time-window correlation over deployments, logs, and metrics."""
+        """Correlate temporal signals across deployments, error logs, and metric spikes."""
+        _validate_read_only_args(incident_id=incident_id)
         result = correlator.correlate(incident_id)
         return {
             "status": "SUCCESS",
@@ -157,6 +175,7 @@ class InvestigationToolRegistry:
         Perform cybersecurity risk analysis and impact assessment on the identified root cause.
         Evaluates CIA triad impact, CWE mapping, blast radius, and mitigation urgency.
         """
+        _validate_read_only_args(incident_id=incident_id, proposed_cause=proposed_cause, category=category)
         incident = get_incident(incident_id)
         threat_vector = incident.threat_category if incident and incident.threat_category else "UNCLASSIFIED_SYSTEM_FAULT"
         cwe = incident.cwe_id if incident and incident.cwe_id else "CWE-693"
@@ -199,13 +218,13 @@ class InvestigationToolRegistry:
             source_type="RISK",
             source_id=f"RISK-{incident_id}",
             summary=f"Risk Assessment for {incident_id}: {risk_level} ({threat_vector}, {cwe})",
-            raw_data=risk_analysis.dict(),
+            raw_data=risk_analysis.model_dump(),
             relevance="CRITICAL"
         )
 
         return {
             "status": "SUCCESS",
-            "risk_analysis": risk_analysis.dict(),
+            "risk_analysis": risk_analysis.model_dump(),
             "evidence_registered": [evid_id]
         }
 

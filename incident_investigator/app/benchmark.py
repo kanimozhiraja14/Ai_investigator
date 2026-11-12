@@ -104,8 +104,49 @@ def run_benchmark() -> BenchmarkReport:
 
     try:
         with open(BENCHMARK_OUTPUT_PATH, "w", encoding="utf-8") as f:
-            json.dump(report.dict(), f, indent=2)
+            json.dump(report.model_dump(), f, indent=2)
     except Exception as e:
         print(f"Warning: Failed to save benchmark results to disk: {e}")
 
     return report
+
+
+class BenchmarkEngine:
+    """Enterprise benchmark runner class providing OOP and functional invocation."""
+
+    @staticmethod
+    def compare_single_incident(incident_id: str) -> BenchmarkComparison:
+        from .telemetry import get_incident
+        inc = get_incident(incident_id)
+        if not inc:
+            raise ValueError(f"Incident {incident_id} not found")
+
+        ai_res = investigator.investigate(inc.id)
+        base_res = baseline.investigate(inc.id)
+
+        ai_correct = _evaluate_correctness(ai_res.root_cause_diagnosis, inc.ground_truth_cause, inc.key_signals)
+        base_correct = _evaluate_correctness(base_res.root_cause_diagnosis, inc.ground_truth_cause, inc.key_signals)
+
+        return BenchmarkComparison(
+            incident_id=inc.id,
+            incident_title=inc.title,
+            ground_truth=inc.ground_truth_cause,
+            category=inc.ground_truth_category,
+            investigator_diagnosis=ai_res.root_cause_diagnosis,
+            investigator_correct=ai_correct,
+            investigator_time_sec=ai_res.duration_seconds,
+            investigator_evidence_count=len(ai_res.evidence_chain),
+            investigator_unsupported_count=len(ai_res.unsupported_claims),
+            baseline_diagnosis=base_res.root_cause_diagnosis,
+            baseline_correct=base_correct,
+            baseline_time_sec=base_res.duration_seconds,
+            baseline_evidence_count=len(base_res.evidence_chain),
+            baseline_unsupported_count=len(base_res.unsupported_claims)
+        )
+
+    @staticmethod
+    def run_full_benchmark() -> BenchmarkReport:
+        return run_benchmark()
+
+
+benchmark_engine = BenchmarkEngine()

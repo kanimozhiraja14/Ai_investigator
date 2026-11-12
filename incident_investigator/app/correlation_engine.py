@@ -130,8 +130,20 @@ class TimeWindowCorrelator:
             "error_logs_count": len(error_logs),
             "metric_anomalies_count": len(metric_anomalies),
             "timeline": timeline_events,
-            "first_error_log": first_error_log.dict() if first_error_log else None
+            "first_error_log": first_error_log.model_dump() if first_error_log else None
         }
+
+    def correlate_incident(self, incident_id: str, window_minutes_before: int = 30, window_minutes_after: int = 30) -> Dict[str, Any]:
+        """Convenience alias for correlate."""
+        res = self.correlate(incident_id, window_minutes_before, window_minutes_after)
+        # Add rich helper fields for testing and analysis
+        res["has_deployment_in_window"] = res.get("correlated_deployments_count", 0) > 0
+        res["deployments"] = [e for e in res.get("timeline", []) if e.get("type") == "DEPLOYMENT"]
+        res["anomalous_metrics"] = [e for e in res.get("timeline", []) if e.get("type") == "METRIC_ANOMALY"]
+        res["error_logs"] = [e for e in res.get("timeline", []) if e.get("type") in ["LOG_ERROR", "ERROR_LOG"]]
+        res["temporal_event_sequence"] = res.get("timeline", [])
+        return res
 
 
 correlator = TimeWindowCorrelator()
+correlation_engine = correlator
