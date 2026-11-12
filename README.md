@@ -1,286 +1,189 @@
-# AEGIS: AI Incident Investigator
+<div align="center">
 
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-v0.115+-009688.svg)](https://fastapi.tiangolo.com)
-[![Status](https://img.shields.io/badge/Security-Read--Only_Enforced-emerald.svg)]()
-[![Accuracy](https://img.shields.io/badge/Root--Cause_Accuracy-100%25-brightgreen.svg)]()
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)]()
+# AI Incident Investigator
 
-> **Enterprise Cybersecurity & SRE Command Center for Autonomous Outage Triage, Cross-Telemetry Correlation, and Evidence-Grounded Root-Cause Analysis.**
+**A local incident-triage demo that correlates synthetic telemetry, retrieves operational runbooks, and explains its findings with linked evidence.**
 
----
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Version](https://img.shields.io/badge/version-2.0.0-475569)](https://github.com/kanimozhiraja14/Ai_investigator)
+[![Read-only](https://img.shields.io/badge/investigation-read--only-16A34A)](#safety-and-limitations)
 
-## 1. Project Overview
+[Quick start](#quick-start) · [Capabilities](#what-it-does) · [API](#api-at-a-glance) · [Safety and limitations](#safety-and-limitations)
 
-**AEGIS (AI Incident Investigator)** is an enterprise-grade incident response platform designed for Site Reliability Engineering (SRE) and Security Operations Center (SOC) teams. When complex microservice outages or cybersecurity anomalies occur, AEGIS autonomously investigates the failure domain by cross-correlating structured logs, time-series metrics, deployment rollouts, and diagnostic runbooks.
-
-Unlike traditional static dashboards or ungrounded LLM chatbots that guess or hallucinate explanations, AEGIS operates as an **auditable, evidence-linked reasoning agent**. Every single causal claim is verified against an immutable ledger of concrete telemetry artifacts (`EVID-*`), ensuring zero unsupported assertions while operating under a strict **Read-Only Investigation Sandbox**.
+</div>
 
 ---
 
-## 2. Problem Statement
+## What it is
 
-Modern cloud-native environments generate gigabytes of telemetry per minute across distributed microservices. When critical service outages occur:
-1. **Alert Fatigue & Fragmented Telemetry:** On-call engineers must manually context-switch between Prometheus graphs, Elasticsearch/Kibana logs, ArgoCD deployment diffs, and stale Notion runbooks.
-2. **Slow Mean Time to Resolution (MTTR):** Manual correlation across temporal windows often takes 30 to 90 minutes while revenue impact cascades.
-3. **Hallucination & Guesswork Risk:** Generic AI assistants frequently fabricate plausible-sounding root causes without validating underlying log traces or metric saturation.
-4. **Production Hazard:** Automated remediation tools that lack guardrails risk executing destructive actions during ambiguous incident states.
+AI Incident Investigator is a Python web application for exploring a set of **10 bundled, synthetic service incidents**. It provides a dashboard and REST API to inspect incident records, query their sample logs, metrics, and deployment events, search Markdown runbooks, and generate a deterministic investigation report.
 
-**AEGIS solves this** by executing multi-vector temporal correlation in sub-millisecond automated workflows, backing 100% of claims with immutable evidence, and strictly enforcing read-only safety.
+The investigator follows scenario-specific rules over the bundled data. It is **not a large language model**, does not connect to live observability systems, and does not execute remediation. Its purpose is to demonstrate an incident-triage workflow and make the inputs and evidence used by each report inspectable.
 
----
+## What it does
 
-## 3. Key Features
+- **Investigates sample incidents:** Runs a multi-step, rule-based investigation and returns a proposed diagnosis, category, confidence breakdown, recommendations, risk metadata, and a trace.
+- **Correlates sample signals:** Places deployment events, error logs, and selected metric anomalies on a chronological incident timeline.
+- **Searches operational runbooks:** Ranks the included Markdown runbooks using BM25-style term scoring with a service-name boost.
+- **Links findings to evidence:** Returns evidence items associated with retrieved runbooks, logs, metrics, deployments, and risk assessment. Evidence is held in an in-memory registry during an investigation.
+- **Compares against a keyword baseline:** Runs both the investigator and a simpler baseline over the bundled scenarios and reports the project's heuristic evaluation.
+- **Provides a browser dashboard:** Serves a static dashboard alongside the API.
 
-- **10 Injected Production Scenarios:** High-fidelity simulation of bad canary deployments, DB connection pool starvation, host disk exhaustion, memory leaks, upstream SaaS drops, SSL certificate expiration, Redis cache stampedes, rate limit misconfigurations, Kafka poison pill rebalance loops, and Vault key auto-rotation desyncs.
-- **BM25 Runbook RAG Engine:** Information retrieval engine with TF-IDF/BM25 scoring ($k_1=1.5, b=0.75$) and service-name boosting over markdown operational runbooks.
-- **Cross-Telemetry Temporal Correlation:** Automatically aligns deployment change events within the incident window ($T_0 - 30\text{m}$), first abnormal error bursts, and metric inflection points.
-- **Strict Read-Only Enforcement:** Intercepts and blocks mutating remediation calls (`restart_service`, `rollback_deployment`, `purge_cache`) with `ReadOnlyViolationError` and security audit logging.
-- **Immutable Evidence Ledger:** All findings register concrete `EVID-LOG-*`, `EVID-METRIC-*`, `EVID-DEP-*`, `EVID-RUNBOOK-*`, and `EVID-RISK-*` artifacts.
-- **Hallucination & Unsupported-Claim Auditor:** Automatically validates all causal hypotheses against the evidence ledger, flagging speculative assertions.
-- **Cybersecurity & Threat Modeling:** Evaluates Common Weakness Enumeration (CWE) mappings, CIA triad impact (Confidentiality, Integrity, Availability), blast radius, and remediation SLAs.
-- **Calibrated Confidence Scoring:** Dynamically computes calibrated confidence ratings across log stack trace clarity (35%), metric anomaly match (25%), temporal proximity (20%), and runbook alignment (20%).
-- **Interactive Enterprise Command Center:** Modern dark navy SRE/SOC dashboard with real-time KPI overview, incident filtering, evidence exploration, security threat matrix, execution timeline, and system health status.
+## How an investigation works
 
----
-
-## 4. System Architecture
-
-```
-                                ┌────────────────────────────────────────┐
-                                │      Outage Alert / Telemetry Burst    │
-                                └───────────────────┬────────────────────┘
-                                                    │
-                                                    ▼
-                                         ┌─────────────────────┐
-                                         │   FastAPI Service   │
-                                         │ (REST API & Web UI) │
-                                         └──────────┬──────────┘
-                                                    │
-                                                    ▼
-                                      ┌───────────────────────────┐
-                                      │   AI Incident Investigator │
-                                      │  Autonomous Reasoning Loop│
-                                      └─────────────┬─────────────┘
-                                                    │
-                ┌───────────────────┬───────────────┴───────────────┬────────────────────┐
-                ▼                   ▼                               ▼                    ▼
-       ┌─────────────────┐ ┌─────────────────┐             ┌──────────────────┐ ┌─────────────────┐
-       │Runbook Retriever│ │Temporal Engine  │             │   Tools Registry │ │  Risk Analysis  │
-       │   (BM25 RAG)    │ │(Cross-Telemetry)│             │(Strict Read-Only)│ │  (CWE / CIA)    │
-       └────────┬────────┘ └────────┬────────┘             └────────┬─────────┘ └────────┬────────┘
-                │                   │                               │                    │
-                └───────────────────┴───────────────┬───────────────┴────────────────────┘
-                                                    ▼
-                                      ┌───────────────────────────┐
-                                      │  Immutable Evidence Store │
-                                      │   (EVID-* Item Ledger)    │
-                                      └─────────────┬─────────────┘
-                                                    │
-                                                    ▼
-                                      ┌───────────────────────────┐
-                                      │   Root-Cause Diagnosis &  │
-                                      │  Runbook Mitigations      │
-                                      │  (0 Unsupported Claims)   │
-                                      └───────────────────────────┘
+```mermaid
+flowchart TD
+    U[Dashboard or API request] --> A[FastAPI application]
+    A --> I[Scenario-specific investigator]
+    I --> R[BM25-style runbook search]
+    I --> C[Temporal signal correlation]
+    I --> D[Deployment and log queries]
+    I --> M[Metric queries]
+    I --> S[Rule-based diagnosis and risk assessment]
+    R --> E[In-memory evidence items]
+    C --> E
+    D --> E
+    M --> E
+    S --> O[Investigation result and trace]
+    E --> O
+    O --> U
 ```
 
----
+The data source is the application's in-memory sample telemetry and the runbook files in [`incident_investigator/app/runbooks/`](incident_investigator/app/runbooks/). No external database, model provider, or observability account is required.
 
-## 5. Technology Stack
+## Quick start
 
-- **Backend Runtime:** Python 3.12 (CPython x86_64)
-- **Web Framework:** FastAPI v0.115+, Starlette, Uvicorn (ASGI)
-- **Data Validation & Schemas:** Pydantic v2
-- **Information Retrieval:** BM25 / TF-IDF Vector Space Algorithm
-- **HTTP Client & Testing:** HTTPX
-- **Frontend / UI:** Vanilla ES6 JavaScript, HTML5, CSS3 Custom Properties (Modern Deep Navy SRE Theme, responsive grid, zero external framework bloat)
-- **Package & Virtualenv Management:** `uv` (Astral)
+### Requirements
 
----
-
-## 6. Installation Instructions
-
-### Prerequisites
-- Python 3.12+ (or `uv` installed)
+- Python 3.10 or newer
 - Git
 
-### Setup Virtual Environment
-```powershell
-# Clone the repository
+The Docker image uses Python 3.12.
+
+### Install and run
+
+```console
 git clone https://github.com/kanimozhiraja14/Ai_investigator.git
 cd Ai_investigator
-
-# Option A: Using uv (Recommended, fast)
-uv venv .venv --python 3.12
-.\.venv\Scripts\activate
-uv pip install -r requirements.txt
-
-# Option B: Using standard Python venv
 python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
----
+Activate the virtual environment:
 
-## 7. Environment Configuration
-
-Copy the example configuration:
 ```powershell
-cp .env.example .env
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
 ```
 
-| Variable | Default | Description |
+```bash
+# macOS / Linux
+source .venv/bin/activate
+```
+
+Install dependencies and start the application:
+
+```console
+python -m pip install -r requirements.txt
+python -m uvicorn incident_investigator.app.main:app --host 127.0.0.1 --port 8000
+```
+
+Open:
+
+- **Dashboard:** [http://localhost:8000](http://localhost:8000)
+- **Interactive API docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Health endpoint:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
+
+To stop the server, press `Ctrl+C`.
+
+### Run with Docker Compose
+
+With Docker and the Compose plugin installed:
+
+```console
+docker compose up --build
+```
+
+Then open [http://localhost:8000](http://localhost:8000). Stop the service with `Ctrl+C`; run `docker compose down` to remove its container.
+
+## API at a glance
+
+All application endpoints are defined in [`incident_investigator/app/main.py`](incident_investigator/app/main.py). The interactive Swagger page at `/docs` is the most complete, runtime-generated API reference.
+
+| Method | Endpoint | Purpose |
 |---|---|---|
-| `HOST` | `0.0.0.0` | Host interface to bind server |
-| `PORT` | `8000` | Port for web server |
-| `INVESTIGATION_MODE` | `READ_ONLY` | Read-only enforcement sandbox |
-| `ENABLE_DESTRUCTIVE_ACTIONS` | `false` | Must remain false in production |
-| `BM25_K1` | `1.5` | BM25 term saturation parameter |
-| `BM25_B` | `0.75` | BM25 document length normalization parameter |
+| `GET` | `/api/health` | Application health and component status |
+| `GET` | `/api/stats` | Summary counts for the sample incidents |
+| `GET` | `/api/incidents` | List incidents; supports `severity`, `status`, `service`, and `search` filters |
+| `GET` | `/api/incidents/{incident_id}` | Retrieve a single incident |
+| `POST` | `/api/investigate/{incident_id}?mode=ai` | Run the rule-based investigator |
+| `POST` | `/api/investigate/{incident_id}?mode=baseline` | Run the keyword baseline |
+| `GET` | `/api/trace/{incident_id}` | Return investigation trace and evidence chain |
+| `GET` | `/api/evidence` | Return evidence for an investigation (defaults to `INC-001`) |
+| `GET` | `/api/logs?incident_id=INC-001` | Query sample logs |
+| `GET` | `/api/metrics?incident_id=INC-001` | Query sample metric points |
+| `GET` | `/api/deployments?incident_id=INC-001` | Query sample deployment events |
+| `GET` | `/api/runbooks?query=connection%20pool` | Search the runbook corpus |
+| `GET` | `/api/runbooks/{runbook_id}` | Retrieve a runbook |
+| `GET` | `/api/benchmark` | Run the comparative benchmark |
+| `GET` | `/api/benchmark/export` | Generate and download the benchmark JSON |
 
----
+Example:
 
-## 8. How to Run the Backend
-
-Launch the FastAPI application with Uvicorn:
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn incident_investigator.app.main:app --host 0.0.0.0 --port 8000 --reload
+```bash
+curl -X POST "http://localhost:8000/api/investigate/INC-001?mode=ai"
 ```
 
----
+## Benchmark
 
-## 9. How to Access the Dashboard
+The checked-in [`benchmark_results.json`](benchmark_results.json) is a snapshot produced by the project's benchmark code over the **10 bundled scenarios**. That snapshot reports 100% investigator accuracy and 0% baseline accuracy, as determined by the project's text-matching correctness heuristic.
 
-Once the backend is running:
-- **Interactive Command Center:** Open [http://localhost:8000](http://localhost:8000)
-- **Swagger / OpenAPI Documentation:** Open [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc API Explorer:** Open [http://localhost:8000/redoc](http://localhost:8000/redoc)
+Treat these as demo results, not a production accuracy or performance claim:
 
----
+- The scenarios and their expected causes are bundled test data.
+- The investigator uses deterministic, scenario-specific rules; it is not an independently trained or evaluated AI model.
+- The correctness metric is a project-defined heuristic, not a human-reviewed assessment.
+- Runtime values depend on the machine and measurement conditions; the stored snapshot is not a latency service-level objective.
+- Calling `/api/benchmark` runs the benchmark and updates the JSON report.
 
-## 10. API Endpoints
+## Safety and limitations
 
-### System Health & Statistics
-- `GET /api/health` — Component operational status, latency, uptime, and read-only mode verification.
-- `GET /api/stats` — High-level SRE/SOC metrics: total incidents, severity breakdown, categories, and MTTR.
+- **Read-only by design:** Investigation tools query data and produce recommendations; they do not carry out remediation. A separate remediation-action method rejects mutation requests, and tests cover selected forbidden inputs. This guard is not a general-purpose production security boundary.
+- **Synthetic, in-memory data:** The included incident telemetry is loaded by the application; there are no live integrations, persistent telemetry storage, or multi-user state management.
+- **Rule-based diagnosis:** Findings are generated by explicit matching rules in the investigator code. Results should not be interpreted as general-purpose AI reasoning or as validated conclusions for real incidents.
+- **Recommendations require review:** Runbook actions and risk metadata are suggestions for this demo. Verify any operational change independently and follow your organization's incident process.
+- **Not production-hardened:** The app enables permissive CORS and has no authentication or authorization layer. Do not expose it to untrusted networks or use it to process sensitive production telemetry without adding appropriate controls.
 
-### Incident Management
-- `GET /api/incidents` — Query all 10 injected incidents with optional `severity`, `status`, `service`, and `search` filters.
-- `GET /api/incidents/{incident_id}` — Details, initial alert, and threat metadata for a specific incident.
+## Development and tests
 
-### AI Investigation & Execution
-- `POST /api/investigate/{incident_id}?mode=ai|baseline` — Executes multi-step AI investigation or keyword baseline.
-- `GET /api/trace/{incident_id}` — Auditable step-by-step trace showing tool calls, arguments, outputs, and timestamps.
-- `GET /api/evidence` — Global Evidence Explorer querying registered evidence ledger items.
+Run the automated test suite from the repository root:
 
-### Observability & Knowledge Base
-- `GET /api/logs` — Query structured application logs with multi-attribute filtering.
-- `GET /api/metrics` — Query time-series telemetry metrics.
-- `GET /api/deployments` — Query deployment change events and commit diffs.
-- `GET /api/runbooks` — BM25 search over operational runbooks.
-- `GET /api/runbooks/{runbook_id}` — Detailed runbook diagnostic steps and mitigations.
-
-### Benchmark Center
-- `GET /api/benchmark` — Evaluates AI Investigator vs Keyword Baseline across all 10 incidents.
-- `GET /api/benchmark/export` — Downloads the official benchmark results JSON report.
-
----
-
-## 11. Example Investigation Workflow
-
-Below is the execution flow for **INC-001 (`payment-service` HTTP 500 Spike)**:
-
-```
-[ALERT] PaymentServiceHighErrorRate: 5xx error rate exceeded 12% in us-east-1
-   │
-   ▼ (Step 1: search_runbooks)
-Matched Runbook: "Payment Service HTTP 500 Spike" (BM25 Score: 9.889)
-   │
-   ▼ (Step 2: correlate_signals)
-High Temporal Correlation: Deployment DEP-101 occurred 120s prior to error spike
-   │
-   ▼ (Step 3: get_deployments)
-Found commit 7f3c91a (v2.4.1): Config diff shows missing STRIPE_WEBHOOK_SECRET
-   │
-   ▼ (Step 4: query_logs)
-Found stack trace in WebhookHandler.java:42: NullPointerException: Cannot invoke getBytes()
-   │
-   ▼ (Step 5: query_metrics)
-http_5xx_rate jumped from 0.001 to 0.252; http_requests_total steady at 1,390 rps
-   │
-   ▼ (Step 6: assess_security_risk)
-Mapped to CWE-312 / CWE-347 (Supply Chain Config Defect) | CIA: C:Med, I:High, A:Crit
-   │
-   ▼ (Synthesis & Audit)
-Root Cause: Missing STRIPE_WEBHOOK_SECRET in v2.4.1 deployment manifest
-Audit Check: 16 evidence items registered; 0 unsupported claims
-Mitigation: Canary rollback deployment/payment-service; re-inject secret in Helm chart
+```console
+python -m unittest discover -s tests -v
 ```
 
----
+The suite covers API behavior, investigation results, runbook retrieval, temporal correlation, benchmark generation, and selected read-only guard cases.
 
-## 12. Benchmark Methodology and Actual Results
+## Repository map
 
-The AI Incident Investigator was benchmarked against a **Keyword-Search Baseline** (which simulates traditional log grep / Elasticsearch triage) across all 10 production incidents.
-
-Actual results are permanently saved in [benchmark_results.json](file:///c:/Users/kanimozhi/Downloads/New%20folder%20(4)/benchmark_results.json):
-
+```text
+incident_investigator/
+  app/
+    main.py                 FastAPI routes and dashboard serving
+    investigator.py         Rule-based investigation flow
+    baseline.py             Keyword baseline
+    telemetry.py            In-memory sample incidents and telemetry
+    correlation_engine.py   Timeline correlation
+    runbook_retriever.py    Markdown runbook search
+    tools.py                Investigation tools and read-only checks
+    runbooks/               Sample operational runbooks
+    static/                 Dashboard HTML, CSS, and JavaScript
+tests/                      unittest test suite
+docs/                       Project design, testing, and deployment notes
+benchmark_results.json      Benchmark output snapshot
 ```
-================================================================================
-BENCHMARK EVALUATION PROOF (AI Investigator vs Keyword Baseline across 10 Incidents)
-================================================================================
-Metric                        | AI Investigator     | Keyword Baseline
---------------------------------------------------------------------------------
-Root-Cause Accuracy           |  100.0% (10/10)     |    0.0% (0/10)
-Avg Time to Diagnosis         | 0.0008s            | 0.0001s
-Unsupported Claims / Incident |   0.00               |   1.80
-================================================================================
-
-INCIDENT-BY-INCIDENT COMPARISON MATRIX:
-ID        | Threat Category        | AI Result   | Baseline    | AI Evidence
---------------------------------------------------------------------------------
-INC-001   | BAD_DEPLOYMENT         | ✅ CORRECT   | ❌ WRONG     | 16 items
-INC-002   | DATABASE_SLOWDOWN      | ✅ CORRECT   | ❌ WRONG     | 13 items
-INC-003   | EXHAUSTED_DISK         | ✅ CORRECT   | ❌ WRONG     | 11 items
-INC-004   | MEMORY_LEAK            | ✅ CORRECT   | ❌ WRONG     | 12 items
-INC-005   | UPSTREAM_DEPENDENCY    | ✅ CORRECT   | ❌ WRONG     | 11 items
-INC-006   | CERTIFICATE_EXPIRATION | ✅ CORRECT   | ❌ WRONG     | 10 items
-INC-007   | CACHE_STAMPEDE         | ✅ CORRECT   | ❌ WRONG     | 10 items
-INC-008   | RATE_LIMIT_MISCONFIG   | ✅ CORRECT   | ❌ WRONG     | 10 items
-INC-009   | CONSUMER_REBALANCE_LOOP | ✅ CORRECT   | ❌ WRONG     | 9 items
-INC-010   | AUTH_SECRET_ROTATION   | ✅ CORRECT   | ❌ WRONG     | 10 items
-================================================================================
-```
-
----
-
-## 13. Security and Read-Only Design
-
-AEGIS is built with enterprise security as a first principle:
-- **Zero Mutation Invariant:** Investigation tools are strictly read-only (`query_logs`, `query_metrics`, `get_deployments`, `search_runbooks`, `assess_security_risk`).
-- **Mutation Blocker:** Any attempt to execute mutating actions (`restart_service`, `drop_table`, `rollback_deployment`, `purge_cache`) raises a `ReadOnlyViolationError` and logs the security violation.
-- **Audit Trails:** Every investigation produces an immutable evidence chain with unique hashes and timestamps.
-
----
-
-## 14. Project Limitations
-
-1. **In-Memory Observability Store:** Currently uses an in-memory synthetic telemetry repository. In multi-cluster production environments, direct connectors to ClickHouse, VictoriaMetrics, or Loki are required.
-2. **Synchronous Runbook Ingestion:** Runbooks are parsed at startup. Large repositories (>10,000 runbooks) will benefit from vector database indexing (e.g. Qdrant or Milvus).
-3. **No Automated Remediation Execution:** By architectural design, AEGIS does not automatically execute remediation commands against live production without human approval.
-
----
-
-## 15. Future Enhancements
-
-- **OpenTelemetry OTLP Receiver:** Native gRPC/HTTP OTLP receiver to ingest live production spans and traces directly into AEGIS.
-- **Dual-Key Approval Tokens:** Secure cryptographic token workflow allowing SRE leads to authorize runbook mitigations directly from the dashboard.
-- **Service Dependency Graphing:** Automatic topology discovery from service mesh telemetry (e.g. Istio / Envoy) to map cascading multi-hop blast radiuses.
-
----
 
 ## License
 
-Apache License 2.0. Built by **kanimozhiraja14**.
+No license file is currently included in the repository. Until one is added, all rights remain with the copyright holder; reuse and redistribution are not granted by this README.
